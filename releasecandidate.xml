@@ -1,0 +1,1369 @@
+<?xml version="1.0"?>
+<!--
+
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+-->
+<!--
+ Usage:  make_branches -makes release branches for all 3 repos
+         maven         -produces the Maven artifacts and stages them on the Nexus repo
+         main          -produces the Ant artifacts and prepares emails to be sent
+         release       -run this after vote passes to move stuff to distribution folders and tag the release.
+ -->
+<project name="CreateRoyaleReleaseCandidate" default="main" basedir=".">
+
+    <property file="${basedir}/local.properties" />
+
+    <!-- Required for OSX 10.6 / Snow Leopard Performance. -->
+    <!-- Java 7 on Mac requires OSX 10.7.3 or higher and is 64-bit only -->
+    <!-- local.d32 is set/used in build.properties so this needs to be done first. -->
+    <condition property="local.d32" value="-d32">
+        <and>
+            <os family="windows"/>
+            <equals arg1="${sun.arch.data.model}" arg2="64"/>
+            <equals arg1="${os.arch}" arg2="x86_64"/>
+            <equals arg1="${ant.java.version}" arg2="1.6"/>
+        </and>
+    </condition>
+
+    <condition property="isMac" value="mac">
+        <os family="mac" />
+    </condition>
+    <condition property="isWindows" value="windows">
+        <os family="windows" />
+    </condition>
+    <condition property="isLinux" value="linux">
+		<and>
+			<os family="unix" />
+			<not>
+				<isset property="isMac" />
+			</not>
+		</and>
+    </condition>
+	
+	<property name="rat.report" value="${basedir}/rat-report.txt"/>
+    <property name="apache.rat.jar" value="apache-rat-0.11.jar" />
+    <property name="apache.rat.tasks.jar" value="apache-rat-tasks-0.11.jar" />
+    <property name="apache.rat.url" value="http://search.maven.org/remotecontent?filepath=org/apache/rat/apache-rat/0.11" />
+    <property name="apache.rat.tasks.url" value="http://search.maven.org/remotecontent?filepath=org/apache/rat/apache-rat-tasks/0.11" />
+    
+    <property file="${basedir}/env.properties" />
+    <property environment="env"/>
+    
+	<condition property="do.copy.downloads" >
+		<isset property="download.cache.dir" /> 
+	</condition>
+	
+    <condition property="CRLF" value="%0D%0A">
+        <isset property="isWindows" />
+    </condition>
+    <property name="CRLF" value="%0A" />
+    
+    <target name="check-empty-folder" >
+        <available file="${basedir}/build.properties"
+            type="file"
+            property="found.build.properties" value="true" />
+        
+        <fail message="This script should be copied into an empty folder and run from there.  Run the maven-branch target to create release branches or run the 'maven' target to start creating an release candidate, then start with an empty folder again and run the 'main' target to complete the release candidate."
+            if="found.build.properties"/>
+    </target>
+    
+    <target name="check-no-repos" >
+        <available file="${basedir}/royale-asjs"
+        type="dir"
+        property="found.clone" value="true" />
+        <available file="${basedir}/royale-compiler"
+        type="dir"
+        property="found.clone" value="true" />
+        <available file="${basedir}/royale-typedefs"
+        type="dir"
+        property="found.clone" value="true" />
+        
+        <fail message="This script should be copied into an empty folder and run from there.  Run the maven-branch target to create release branches or run the 'maven' target to start creating an release candidate, then start with an empty folder again and run the 'main' target to complete the release candidate."
+        if="found.clone"/>
+    </target>
+    
+    <fail message="The ANT_HOME environment variable is not set."
+        unless="env.ANT_HOME"/>
+	
+    <target name="check-name-and-svn">
+        <fail message="The my.name property is not set to the RM's name.  This property (and other properties) is often set in a local.properties file and copied into an empty folder before running this script."
+            unless="my.name"/>
+            
+        <available file="${svn.dist.dev}"
+            type="dir" 
+            property="dist.dev" value="${svn.dist.dev}" />
+        
+        <fail message="The svn.dist.dev property is not set to the working copy for https://dist.apache.org/repos/dist/dev."
+            unless="dist.dev"/>
+    </target>
+    
+    <!--
+	<available file="${svn.site}"
+		type="dir" 
+		property="site" value="${svn.site}" />
+    
+	<fail message="The svn.site property is not set to the working copy for https://royale.apache.org."
+        unless="site"/>
+     -->
+				
+	<available file="${env.AIR_HOME}"
+		type="dir" 
+		property="AIR_HOME" value="${env.AIR_HOME}" />
+
+    <fail message="The AIR_HOME property is not set in environment or command-line."
+        unless="AIR_HOME"/>
+		
+    <available file="${env.PLAYERGLOBAL_HOME}"
+        type="dir"
+        property="PLAYERGLOBAL_HOME" value="${env.PLAYERGLOBAL_HOME}" />
+    
+    <fail message="The PLAYERGLOBAL_HOME property is not set in environment or command-line."
+        unless="PLAYERGLOBAL_HOME"/>
+    
+    <available file="${env.FLASHPLAYER_DEBUGGER}"
+        type="dir"
+        property="FLASHPLAYER_DEBUGGER" value="${env.FLASHPLAYER_DEBUGGER}" />
+    
+    <available file="${env.FLASHPLAYER_DEBUGGER}"
+        type="file"
+        property="FLASHPLAYER_DEBUGGER" value="${env.FLASHPLAYER_DEBUGGER}" />
+    
+    <fail message="The FLASHPLAYER_DEBUGGER property is not set in environment or command-line."
+        unless="FLASHPLAYER_DEBUGGER"/>
+        
+    <available file="${env.ProgramFiles}/Mozilla Firefox/firefox.exe"
+		type="file"
+		property="browser" value="${env.ProgramFiles}/Mozilla Firefox/firefox.exe" />
+    <available file="${env.ProgramFiles(x86)}/Mozilla Firefox/firefox.exe"
+		type="file"
+		property="browser" value="${env.ProgramFiles(x86)}/Mozilla Firefox/firefox.exe" />
+    <available file="/Applications/Firefox.app/Contents/MacOS/firefox"
+		type="file"
+		property="browser" value="/Applications/Firefox.app/Contents/MacOS/firefox" />
+        
+    <available file="${env.ANT_HOME}/lib/${apache.rat.jar}"
+        type="file"
+        property="apache.rat.found"/>
+    <available file="${env.ANT_HOME}/lib/${apache.rat.tasks.jar}"
+        type="file"
+        property="apache.rat.tasks.found"/>
+		
+    <fail message="Could not locate Firefox.  Please specify a browser with
+    -Dbrowser=&lt;path-to-browser&gt;"
+        unless="browser"/>
+        
+    <condition property="svn" value="svn.exe">
+        <isset property="isWindows" />
+    </condition>
+    <property name="svn" value="svn" />
+    <!-- see if exec can use path to find svn
+    <available file="${env.ProgramFiles}/SlikSVN/bin/svn.exe"
+		type="file"
+		property="svn" value="${env.ProgramFiles}/SlikSVN/bin/svn.exe" />
+    <available file="${env.ProgramFiles(x86)}/SlikSVN/bin/svn.exe"
+		type="file"
+		property="svn" value="${env.ProgramFiles}/SlikSVN/bin/svn.exe" />
+    <available file="/opt/subversion/bin/svn"
+		type="file"
+		property="svn" value="/opt/subversion/bin/svn" />
+    <fail message="Could not locate SVN command-line.  Please specify the path to SVN with
+    -Dsvn=&lt;path-to-svn&gt;"
+        unless="svn"/>
+     -->
+                
+    <condition property="git" value="git.exe">
+        <isset property="isWindows" />
+    </condition>
+    <property name="git" value="git" />
+    <!-- see if exec can use path to find git
+    <available file="${env.ProgramFiles}/Git/bin/git.exe"
+		type="file"
+		property="git" value="${env.ProgramFiles}/Git/bin/git.exe" />
+    <available file="${env.ProgramFiles(x86)}/Git/bin/git.exe"
+		type="file"
+		property="git" value="${env.ProgramFiles(x86)}/Git/bin/git.exe" />
+    <available file="/usr/local/git/bin/git"
+		type="file"
+		property="git" value="/usr/local/git/bin/git" />
+    <fail message="Could not locate Git command-line.  Please specify the path to Git with
+    -Dgit=&lt;path-to-git&gt;"
+        unless="git"/>
+    -->
+    
+    <condition property="mvn" value="mvn.cmd">
+        <isset property="isWindows" />
+    </condition>
+    <property name="mvn" value="mvn" />
+    
+    <available file="${env.ANT_HOME}/lib/${apache.rat.jar}"
+        type="file"
+        property="apache.rat.found"/>
+    <available file="${env.ANT_HOME}/lib/${apache.rat.tasks.jar}"
+        type="file"
+        property="apache.rat.tasks.found"/>
+		
+    <fail message="Could not locate Firefox.  Please specify a browser with
+    -Dbrowser=&lt;path-to-browser&gt;"
+        unless="browser"/>
+    <fail message="The release version number is not set.  Specify -Drelease.version=&lt;release version (e.g. 0.9.0, 1.0.0, etc)&gt;"
+    unless="release.version"/>
+    <target name="use_release_branch">
+        <property name="branch.name" value="release/${release.version}" />
+    </target>
+    <target name="use_develop_branch">
+        <property name="branch.name" value="develop" />
+    </target>
+    
+    <fail message="The release candidate number is not set.  Specify -Drc=&lt;rc number (e.g. 1, 2, 3, etc)&gt;"
+    unless="rc"/>
+		
+	<target name="install-rat" depends="install-rat.jar,install-rat.tasks.jar" />
+	<target name="install-rat.jar" unless="apache.rat.found">
+		<get src="${apache.rat.url}/${apache.rat.jar}" dest="${env.ANT_HOME}/lib/${apache.rat.jar}" />
+	</target>
+	<target name="install-rat.tasks.jar" unless="apache.rat.tasks.found">
+        <get src="${apache.rat.tasks.url}/${apache.rat.tasks.jar}" dest="${env.ANT_HOME}/lib/${apache.rat.tasks.jar}" />
+	</target>
+	
+    <target name="rat-taskdef" description="Rat taskdef">
+        <typedef resource="org/apache/rat/anttasks/antlib.xml"
+        uri="antlib:org.apache.rat.anttasks"
+        classpathref="anttask.classpath"/>
+    </target>
+
+    <target name="check-royale-asjs">
+        <available file="${basedir}/royale-asjs"
+        type="dir"
+        property="asjs"
+        value="${basedir}/royale-asjs"/>
+    </target>
+
+    <target name="clone-asjs" depends="check-royale-asjs" unless="asjs">
+        <echo>cloning royale-asjs repo into ${basedir}/royale-asjs</echo>
+        <exec executable="git" failonerror="true" dir="${basedir}">
+            <arg value="clone" />
+            <arg value="https://github.com/apache/royale-asjs.git" />
+            <arg value="royale-asjs" />
+        </exec>
+        <exec executable="git" failonerror="true" dir="${basedir}/royale-asjs">
+            <arg value="checkout" />
+            <arg value="${branch.name}" />
+        </exec>
+        <available file="${basedir}/royale-asjs"
+            type="dir"
+            property="asjs"
+            value="${basedir}/royale-asjs"/>
+        
+        <fail message="Could not locate royale-asjs repo."
+            unless="asjs"/>
+        
+        <echo>changed to branch ${branch.name}</echo>
+    </target>
+
+    <target name="check-royale-compiler">
+        <available file="${basedir}/royale-compiler"
+        type="dir"
+        property="compiler"
+        value="${basedir}/royale-compiler" />
+    </target>
+
+    <target name="clone-compiler" depends="check-royale-compiler" unless="compiler">
+        <echo>cloning royale-compiler repo into ${basedir}/royale-compiler</echo>
+        <exec executable="git" failonerror="true" dir="${basedir}">
+            <arg value="clone" />
+            <arg value="https://github.com/apache/royale-compiler.git" />
+            <arg value="royale-compiler" />
+        </exec>
+        <exec executable="git" failonerror="true" dir="${basedir}/royale-compiler">
+            <arg value="checkout" />
+            <arg value="${branch.name}" />
+        </exec>
+        <available file="${basedir}/royale-compiler"
+            type="dir"
+            property="compiler"
+            value="${basedir}/royale-compiler" />
+        
+        <fail message="Could not locate royale-compiler repo."
+            unless="compiler"/>
+        
+        <echo>changed to branch ${branch.name}</echo>
+    </target>
+
+    <target name="check-royale-typedefs">
+        <available file="${basedir}/royale-typedefs"
+        type="dir"
+        property="typedefs"
+        value="${basedir}/royale-typedefs"/>
+    </target>
+
+    <target name="clone-typedefs" depends="check-royale-typedefs" unless="typedefs">
+        <echo>cloning royale-typedefs repo into ${basedir}/royale-typedefs</echo>
+        <exec executable="git" failonerror="true" dir="${basedir}">
+            <arg value="clone" />
+            <arg value="https://github.com/apache/royale-typedefs.git" />
+            <arg value="royale-typedefs" />
+        </exec>
+        <exec executable="git" failonerror="true" dir="${basedir}/royale-typedefs">
+            <arg value="checkout" />
+            <arg value="${branch.name}" />
+        </exec>
+        <available file="${basedir}/royale-typedefs"
+            type="dir"
+            property="typedefs"
+            value="${basedir}/royale-typedefs"/>
+        
+        <fail message="Could not locate royale-typedefs repo."
+            unless="typedefs"/>
+        
+        <echo>changed to branch ${branch.name}</echo>
+    </target>
+
+    <target name="verify-task">
+        <input
+        message="This task will build a release candidate.  It expects that the make_branches and maven targets have been run first.  Close the browser if you are using FireFox.  Press any &lt;enter&gt; to enter the location of the Maven source artifacts."
+        />
+    </target>
+    
+    <target name="get-maven-folders">
+        <input
+        message="Enter Maven Staging Repo folder number"
+        addproperty="maven.staging.folder.number"/>
+    </target>
+    
+    <target name="main" depends="check-empty-folder,check-no-repos,verify-task,check-name-and-svn,install-rat,credentials,get-maven-folders,get-maven-source-artifacts,check-royale-asjs" description="Perform packaging steps">
+		<antcall target="check-new-version" />
+        <antcall target="ant-artifacts" />
+		<antcall target="stage.rc" />
+		<antcall target="push.rc" />
+	</target>
+	
+    <target name="checkout-release-branch" >
+        <exec executable="${git}" dir="${asjs}" failonerror="false">
+            <arg value="checkout" />
+            <arg value="${branch.name}" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" outputproperty="git.status">
+            <arg value="status" />
+        </exec>
+        <condition property="on.branch">
+            <contains string="${git.status}" substring="branch ${branch.name}" />
+        </condition>
+        <fail message="Not on release branch ${branch.name) in ${asjs}."
+            unless="on.branch"/>
+    </target>
+    
+    <target name="checkout-release-branch-compiler" >
+        <exec executable="${git}" dir="${compiler}" failonerror="false">
+            <arg value="checkout" />
+            <arg value="${branch.name}" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" outputproperty="git.status.compiler">
+            <arg value="status" />
+        </exec>
+        <condition property="on.branch.compiler">
+            <contains string="${git.status.compiler}" substring="branch ${branch.name}" />
+        </condition>
+        <fail message="Not on release branch ${branch.name) in ${compiler}."
+            unless="on.branch.compiler"/>
+    </target>
+    
+    <target name="checkout-release-branch-typedefs" >
+        <exec executable="${git}" dir="${typedefs}" failonerror="false">
+            <arg value="checkout" />
+            <arg value="${branch.name}" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" outputproperty="git.status.typedefs">
+            <arg value="status" />
+        </exec>
+        <condition property="on.branch.typedefs">
+            <contains string="${git.status.typedefs}" substring="branch ${branch.name}" />
+        </condition>
+        <fail message="Not on release branch ${branch.name) in ${typedefs}."
+            unless="on.branch.typedefs"/>
+    </target>
+    
+    <target name="check-maven-branch" >
+        <exec executable="${git}" dir="${asjs}" failonerror="true" outputproperty="git.branches">
+            <arg value="branch" />
+            <arg value="--all" />
+        </exec>
+        <condition property="branch.exists">
+            <contains string="${git.branches}" substring="${release.version}" />
+        </condition>
+    </target>
+    
+    <target name="check-maven-branch.compiler" >
+        <exec executable="${git}" dir="${compiler}" failonerror="true" outputproperty="git.compiler.branches">
+            <arg value="branch" />
+            <arg value="--all" />
+        </exec>
+        <condition property="compiler.branch.exists">
+            <contains string="${git.compiler.branches}" substring="${release.version}" />
+        </condition>
+    </target>
+    
+    <target name="check-maven-branch.typedefs" >
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" outputproperty="git.typedefs.branches">
+            <arg value="branch" />
+            <arg value="--all" />
+        </exec>
+        <condition property="typedefs.branch.exists">
+            <contains string="${git.typedefs.branches}" substring="${release.version}" />
+        </condition>
+    </target>
+    
+    <target name="maven.branch.compiler" depends="clone-compiler,check-maven-branch.compiler" unless="compiler.branch.exists">
+        <exec executable="${mvn}" dir="${compiler}" failonerror="true" >
+            <arg value="--batch-mode" />
+            <arg value="release:branch" />
+            <!--<arg value="-DpushChanges=false" />-->
+            <arg value="-DbranchName=release/${release.version}" />
+        </exec>
+    </target>
+    
+    <target name="git-commit-and-push-utils-if-modified" if="utils.modification.exists">
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="add" />
+            <arg value="compiler-jburg-types/pom.xml" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="add" />
+            <arg value="compiler-build-tools/pom.xml" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="add" />
+            <arg value="pom.xml" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="remove SNAPSHOT from compiler-jburg-types and compiler-build-tools versions" />
+        </exec>
+    </target>
+    
+    <target name="git-commit-and-push-utils">
+        <exec executable="${git}" dir="${compiler}" failonerror="true" outputproperty="git.status.utils">
+            <arg value="status" />
+        </exec>
+        <condition property="utils.modification.exists">
+            <contains string="${git.status.utils}" substring="modified:" />
+        </condition>
+        <antcall target="git-commit-and-push-utils-if-modified" />
+    </target>
+    
+    <target name="git-commit-and-push-typedefs-if-modified" if="typedefs.modification.exists">
+        <echo>calling git add</echo>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="add" />
+            <arg value="pom.xml" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="remove SNAPSHOT from compiler-build-tools versions" />
+        </exec>
+    </target>
+    
+    <target name="git-commit-and-push-typedefs">
+        <exec executable="${git}" dir="${typedefs}" failonerror="true">
+            <arg value="remote" />
+            <arg value="-v" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" outputproperty="git.push.status.typedefs">
+            <arg value="status" />
+        </exec>
+        <echo>${git.push.status.typedefs}</echo>
+        <condition property="typedefs.modification.exists">
+            <contains string="${git.push.status.typedefs}" substring="modified:" />
+        </condition>
+        <antcall target="git-commit-and-push-typedefs-if-modified" />
+    </target>
+    
+    <target name="git-commit-and-push-asjs-if-modified" if="asjs.modification.exists">
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="add" />
+            <arg value="pom.xml" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="remove SNAPSHOT from compiler and typedefs versions" />
+        </exec>
+    </target>
+    
+    <target name="git-commit-and-push-asjs">
+        <exec executable="${git}" dir="${asjs}" failonerror="true" outputproperty="git.push.status.asjs">
+            <arg value="status" />
+        </exec>
+        <condition property="asjs.modification.exists">
+            <contains string="${git.push.status.asjs}" substring="modified:" />
+        </condition>
+        <antcall target="git-commit-and-push-asjs-if-modified" />
+    </target>
+    
+    <target name="maven.prepare.compiler">
+        <!-- use production versions for compiler-build-tools and compiler-jburg-types -->
+        <replace token="1.0.0-SNAPSHOT" value="1.0.0">
+            <fileset dir="${compiler}" >
+                <include name="compiler-build-tools/pom.xml" />
+                <include name="compiler-jburg-types/pom.xml" />
+                <include name="pom.xml" />
+            </fileset>
+        </replace>
+        <!-- build these modules -->
+        <exec executable="${mvn}" dir="${compiler}" failonerror="true" >
+            <arg value="clean" />
+            <arg value="install" />
+            <arg value="-P" />
+            <arg value="-main,utils" />
+        </exec>
+        <antcall target="git-commit-and-push-utils" />
+        <!-- http://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html -->
+        <exec executable="${mvn}" dir="${compiler}" failonerror="true" >
+            <arg value="--batch-mode" />
+            <arg value="release:prepare" />
+            <!--<arg value="-DpushChanges=false" />-->
+            <arg value="-Dtag=org.apache.royale.compiler-${release.version}-rc${rc}" />
+            <arg value="-Dproject.rel.org.apache.royale:compiler-build-tools=1.0.0" />
+            <arg value="-Dproject.rel.org.apache.royale:compiler-jburg-types=1.0.0" />
+            <arg value="-Dproject.rel.org.apache.royale:compiler-common=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:compiler-externc=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:compiler=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:compiler-jx=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:compiler-test-utils=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:swfutils=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:debugger=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:flex-compiler-oem=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:royale-ant-tasks=${release.version}" />
+            <arg value="-Dproject.rel.org.apache.royale:royale-maven-plugin=${release.version}" />
+            <arg value="-Dproject.dev.org.apache.royale:compiler-build-tools=1.0.0" />
+            <arg value="-Dproject.dev.org.apache.royale:compiler-jburg-types=1.0.0" />
+        </exec>
+    </target>
+    
+    <target name="maven.perform.compiler">
+        <!-- http://maven.apache.org/maven-release/maven-release-plugin/examples/perform-release.html -->
+        <copy file="${compiler}/release.properties" tofile="${compiler}/copyofrelease.properties" />
+        <exec executable="${mvn}" dir="${compiler}" failonerror="true" >
+            <arg value="release:perform" />
+            <arg value="-P" />
+            <arg value="-main,utils" />
+            <!--<arg value="-DpushChanges=false" />-->
+        </exec>
+        <copy file="${compiler}/copyofrelease.properties" tofile="${compiler}/release.properties" />
+        <exec executable="${mvn}" dir="${compiler}" failonerror="true" >
+            <arg value="release:perform" />
+            <arg value="-P" />
+            <arg value="main" />
+            <!--<arg value="-DpushChanges=false" />-->
+        </exec>
+        <delete file="${compiler}/copyofrelease.properties" failonerror="false" />
+    </target>
+    
+    <target name="royale.compiler" depends="clone-compiler,checkout-release-branch-compiler,maven.prepare.compiler,maven.perform.compiler" />
+    
+    <target name="update.typedefs.pom" >
+        <replaceregexp file="${typedefs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.compiler.version&gt;.*&lt;"/>
+            <substitution expression="royale.compiler.version&gt;${release.version}&lt;"/>
+        </replaceregexp>
+        <replaceregexp file="${typedefs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.build-tools.version&gt;.*&lt;"/>
+            <substitution expression="royale.build-tools.version&gt;1.0.0&lt;"/>
+        </replaceregexp>
+        <antcall target="git-commit-and-push-typedefs" />
+    </target>
+    
+    <target name="maven.branch.typedefs" depends="clone-typedefs,check-maven-branch.typedefs" unless="typedefs.branch.exists">
+        <exec executable="${mvn}" dir="${typedefs}" failonerror="true" >
+            <arg value="release:branch" />
+            <!--<arg value="-DpushChanges=false" />-->
+            <arg value="-DbranchName=release/${release.version}" />
+        </exec>
+        <antcall target="update_other_typedef_develop_poms" />
+    </target>
+
+    <target name="update_other_typedef_develop_poms" depends="check-royale-typedefs">
+        <exec executable="${git}" dir="${typedefs}" failonerror="false" >
+            <arg value="checkout" />
+            <arg value="develop" />
+        </exec>
+        <xmlproperty file="${typedefs}/pom.xml" prefix="pom"/>
+        <echo>next version is: ${pom.project.version}</echo>
+        <exec executable="${mvn}" dir="${typedefs}" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-DallowSnapshots=true" />
+            <arg value="-Dproperty=royale.compiler.version" />
+            <arg value="-DnewVersion=${pom.project.version}" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="add" />
+            <arg value="." />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="update other poms to next version" />
+        </exec>
+        <echo>run git show in royale-asjs to double-check the last commit then run git-push</echo>
+    </target>
+
+    <target name="maven.prepare.typedefs">
+        <!-- http://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html -->
+        <exec executable="${mvn}" dir="${typedefs}" failonerror="true" >
+            <arg value="--batch-mode" />
+            <arg value="release:prepare" />
+            <!--<arg value="-DpushChanges=false" />-->
+            <arg value="-Dtag=org.apache.royale.typedefs-${release.version}-rc${rc}" />
+            <arg value="-DautoVersionSubmodules=true" />
+        </exec>
+    </target>
+    
+    <target name="maven.perform.typedefs">
+        <!-- http://maven.apache.org/maven-release/maven-release-plugin/examples/perform-release.html -->
+        <exec executable="${mvn}" dir="${typedefs}" failonerror="true" >
+            <arg value="release:perform" />
+            <!--<arg value="-DpushChanges=false" />-->
+        </exec>
+    </target>
+    
+    <target name="royale.typedefs" depends="clone-typedefs,checkout-release-branch-typedefs,update.typedefs.pom,maven.prepare.typedefs,maven.perform.typedefs" />
+    
+    <target name="update.framework.pom" >
+        <replaceregexp file="${asjs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.compiler.version&gt;.*&lt;"/>
+            <substitution expression="royale.compiler.version&gt;${release.version}&lt;"/>
+        </replaceregexp>
+        <replaceregexp file="${asjs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.build-tools.version&gt;.*&lt;"/>
+            <substitution expression="royale.build-tools.version&gt;1.0.0&lt;"/>
+        </replaceregexp>
+        <replaceregexp file="${asjs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.typedefs.version&gt;.*&lt;"/>
+            <substitution expression="royale.typedefs.version&gt;${release.version}&lt;"/>
+        </replaceregexp>
+        <antcall target="git-commit-and-push-asjs" />
+    </target>
+    
+    <target name="maven.branch.framework" depends="clone-asjs,check-maven-branch" unless="branch.exists">
+        <exec executable="${mvn}" dir="${asjs}" failonerror="true" >
+            <arg value="release:branch" />
+            <!--<arg value="-DpushChanges=false" />-->
+            <arg value="-DbranchName=release/${release.version}" />
+            <arg value="-P" />
+            <!-- include all profiles that build so that the version update hits all of their poms -->
+            <arg value="build-examples,build-distribution,build-manualtests,run-testsuite" />
+        </exec>
+        <antcall target="update_other_develop_poms" />
+    </target>
+    
+    <target name="update_other_develop_poms" depends="check-royale-asjs">
+        <exec executable="${git}" dir="${asjs}" failonerror="false" >
+            <arg value="checkout" />
+            <arg value="develop" />
+        </exec>
+        <xmlproperty file="${asjs}/pom.xml" prefix="pom"/>
+        <echo>next version is: ${pom.project.version}</echo>
+        <exec executable="${mvn}" dir="${asjs}/examples" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-DallowSnapshots=true" />
+            <arg value="-Dproperty=royale.framework.version" />
+            <arg value="-DnewVersion=${pom.project.version}" />
+        </exec>
+        <exec executable="${mvn}" dir="${asjs}/archetypes" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-DallowSnapshots=true" />
+            <arg value="-Dproperty=royale.framework.version" />
+            <arg value="-DnewVersion=${pom.project.version}" />
+        </exec>
+        <exec executable="${mvn}" dir="${asjs}/manualtests" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-DallowSnapshots=true" />
+            <arg value="-Dproperty=royale.framework.version" />
+            <arg value="-DnewVersion=${pom.project.version}" />
+        </exec>
+        <exec executable="${mvn}" dir="${asjs}" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-DallowSnapshots=true" />
+            <arg value="-Dproperty=royale.framework.version" />
+            <arg value="-DnewVersion=${pom.project.version}" />
+        </exec>
+        <exec executable="${mvn}" dir="${asjs}" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-DallowSnapshots=true" />
+            <arg value="-Dproperty=royale.typedefs.version" />
+            <arg value="-DnewVersion=${pom.project.version}" />
+        </exec>
+        <exec executable="${mvn}" dir="${asjs}" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-DallowSnapshots=true" />
+            <arg value="-Dproperty=royale.compiler.version" />
+            <arg value="-DnewVersion=${pom.project.version}" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="add" />
+            <arg value="." />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="update other poms to next version" />
+        </exec>
+        <echo>run git show in royale-asjs to double-check the last commit then run git-push</echo>
+    </target>
+    
+    <target name="update_other_release_poms" depends="check-royale-asjs">
+        <echo>updating release poms to version: ${release.version}</echo>
+        <exec executable="${mvn}" dir="${asjs}/examples" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-Dproperty=royale.framework.version" />
+            <arg value="-DnewVersion=${release.version}" />
+        </exec>
+        <exec executable="${mvn}" dir="${asjs}/archetypes" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-Dproperty=royale.framework.version" />
+            <arg value="-DnewVersion=${release.version}" />
+        </exec>
+        <exec executable="${mvn}" dir="${asjs}/manualtests" failonerror="true" >
+            <arg value="org.codehaus.mojo:versions-maven-plugin:2.5:set-property" />
+            <arg value="-DgenerateBackupPoms=false" />
+            <arg value="-Dproperty=royale.framework.version" />
+            <arg value="-DnewVersion=${release.version}" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="add" />
+            <arg value="." />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="update other poms to current version" />
+        </exec>
+    </target>
+    
+    <target name="maven.prepare">
+        <antcall target="update_other_release_poms" />
+        <!-- http://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html -->
+        <exec executable="${mvn}" dir="${asjs}" failonerror="true" >
+            <arg value="--batch-mode" />
+            <arg value="release:prepare" />
+            <!--<arg value="-DpushChanges=false" />-->
+            <arg value="-Dtag=org.apache.royale.framework-${release.version}-rc${rc}" />
+            <arg value="-DautoVersionSubmodules=true" />
+            <arg value="-P" />
+            <!-- include all profiles that build so that the version update hits all of their poms -->
+            <arg value="build-examples,build-distribution,build-manualtests,run-testsuite" />
+        </exec>
+    </target>
+    
+    <target name="maven.perform">
+        <!-- http://maven.apache.org/maven-release/maven-release-plugin/examples/perform-release.html -->
+        <exec executable="${mvn}" dir="${asjs}" failonerror="true" >
+            <arg value="release:perform" />
+            <!--<arg value="-DpushChanges=false" />-->
+        </exec>
+    </target>
+    
+    <target name="royale.framework" depends="clone-asjs,checkout-release-branch,update.framework.pom,maven.prepare,maven.perform" />
+    
+    <target name="close.maven.staging.repo" >
+        <input
+        message="At this point, the Maven artifacts should be ready to be posted on the staging repo.  Press a key and your browser will open to Nexus, the staging repository UI.  Login.  Then choose Staging Repositories in the left list.  Then find the orgapacheroyale repo in the top list.  Check the checkbox for orgapacheroyale then click on the 'close' button to post the artifacts."/>
+        <exec executable="${browser}" spawn="true">
+            <arg value="http://repository.apache.org/" />
+        </exec>
+    </target>
+    
+	<target name="maven" depends="check-empty-folder, use_release_branch, royale.compiler, royale.typedefs, royale.framework, close.maven.staging.repo">
+    </target>
+    <target name="maven_only_compiler" depends="check-empty-folder, use_release_branch, royale.compiler">
+    </target>
+    <target name="maven_skip_compiler" depends="check-empty-folder, use_release_branch, royale.typedefs, royale.framework, close.maven.staging.repo">
+    </target>
+    <target name="maven_skip_compiler_and_typedefs" depends="check-empty-folder, use_release_branch, royale.framework, close.maven.staging.repo">
+    </target>
+
+    <target name="make_branches" depends="check-empty-folder,use_develop_branch,maven.branch.compiler,maven.branch.typedefs, maven.branch.framework">
+    </target>
+
+    <target name="get-maven-source-artifacts" >
+        <mkdir dir="${basedir}/temp" />
+        <mkdir dir="${basedir}/temp/royale-asjs" />
+        <mkdir dir="${basedir}/temp/royale-typedefs" />
+        <mkdir dir="${basedir}/temp/royale-compiler" />
+        <get src="https://repository.apache.org/content/repositories/orgapacheroyale-${maven.staging.folder.number}/org/apache/royale/framework/royale-framework-parent/${release.version}/royale-framework-parent-${release.version}-source-release.zip" dest="${basedir}/temp/royale-asjs.zip" />
+        <unzip src="${basedir}/temp/royale-asjs.zip"
+            dest="${basedir}/royale-asjs">
+          <cutdirsmapper dirs="1"/>
+        </unzip>
+        <get src="https://repository.apache.org/content/repositories/orgapacheroyale-${maven.staging.folder.number}/org/apache/royale/typedefs/royale-typedefs-parent/${release.version}/royale-typedefs-parent-${release.version}-source-release.zip" dest="${basedir}/temp/royale-typedefs.zip" />
+        <unzip src="${basedir}/temp/royale-typedefs.zip"
+            dest="${basedir}/royale-typedefs">
+          <cutdirsmapper dirs="1"/>
+        </unzip>
+        <get src="https://repository.apache.org/content/repositories/orgapacheroyale-${maven.staging.folder.number}/org/apache/royale/compiler/royale-compiler-parent/${release.version}/royale-compiler-parent-${release.version}-source-release.zip" dest="${basedir}/temp/royale-compiler.zip" />
+        <unzip src="${basedir}/temp/royale-compiler.zip"
+            dest="${basedir}/royale-compiler">
+          <cutdirsmapper dirs="1"/>
+        </unzip>
+
+    </target>
+    
+    <target name="ant-artifacts">
+		<ant dir="${basedir}/royale-asjs" target="release" />
+		<ant dir="${basedir}/royale-asjs" target="create-SHA-512" />
+        <ant dir="${basedir}/royale-asjs" target="create-SHA-512-jsonly" />
+		<ant dir="${basedir}/royale-asjs" target="sign" />
+        <ant dir="${basedir}/royale-asjs" target="sign-jsonly" />
+		<!--<ant antfile="build.xml" target="doc-create-md5" />-->
+		<!--<ant antfile="build.xml" target="doc-sign" />-->
+    </target>
+    
+    <target name="stage.rc" unless="no.push">
+		<mkdir dir="${dist.dev}/royale/${release.version}/rc${rc}/binaries" />
+		<!--<mkdir dir="${dist.dev}/royale/${release.version}/rc${rc}/doc" />-->
+		<copy todir="${dist.dev}/royale/${release.version}/rc${rc}" >
+			<fileset dir="${asjs}/out" >
+				<include name="apache-royale-${release.version}-src*" />
+			</fileset>
+		</copy>
+		<copy todir="${dist.dev}/royale/${release.version}/rc${rc}/binaries" >
+			<fileset dir="${asjs}/out" >
+				<include name="apache-royale-${release.version}-bin-js-swf*" />
+			</fileset>
+		</copy>
+        <copy todir="${dist.dev}/royale/${release.version}/rc${rc}/binaries" >
+            <fileset dir="${asjs}/out" >
+                <include name="apache-royale-${release.version}-bin-js*" />
+            </fileset>
+        </copy>
+		<!--<copy todir="${dist.dev}/royale/${release.version}/rc${rc}/doc" >
+			<fileset dir="${basedir}/out" >
+				<include name="apache-royale-${release.version}-asdoc*" />
+			</fileset>
+		</copy>-->
+		<copy file="${asjs}/releasemgr/README" tofile="${dist.dev}/royale/${release.version}/rc${rc}/READme" />
+		<copy file="${asjs}/ApproveRoyale.xml" tofile="${dist.dev}/royale/${release.version}/rc${rc}/ApproveRoyale.xml" />
+	</target>
+    
+	<target name="push.rc" unless="no.push">
+		<exec executable="${svn}" dir="${dist.dev}/royale" failonerror="true" >
+			<arg value="add" />
+			<arg value="${dist.dev}/royale/${release.version}/rc${rc}" />
+		</exec>
+		<exec executable="${svn}" dir="${dist.dev}/royale" failonerror="true" >
+			<arg value="commit" />
+			<arg value="--username" />
+			<arg value="${apache.username}" />
+			<arg value="--password" />
+			<arg value="${apache.password}" />
+			<arg value="-m" />
+			<arg value="rc${rc} of Apache Royale ${release.version}" />
+		</exec>
+		<antcall target="mail" />
+    </target>
+
+	<target name="credentials" depends="get-username,get-password">
+		<echo>${apache.username}</echo>
+		<echo>${apache.password}</echo>
+	</target>
+	<target name="get-username" unless="apache.username" >
+        <input
+        message="Enter Apache account username:"
+        addproperty="apache.username"/>
+        <condition property="have.username">
+			<not>
+				<equals trim="true" arg1="" arg2="${apache.username}"/>
+			</not>
+        </condition>
+		<fail message="The apache.username property is not set.  It should be the username for Apache SVN and Git."
+			unless="have.username"/>
+	</target>
+	<target name="get-password" unless="apache.password" >
+        <input
+        message="Enter Apache account password:"
+        addproperty="apache.password"/>
+        <condition property="have.password">
+			<not>
+				<equals trim="true" arg1="" arg2="${apache.password}"/>
+			</not>
+        </condition>
+		<fail message="The apache.password property is not set.  It should be the password for Apache SVN and Git."
+			unless="have.password"/>
+	</target>
+	
+	<target name="check-new-version" description="check if svn folder needs to be added" >
+        <exec executable="${svn}" dir="${dist.dev}/royale" failonerror="true" >
+            <arg value="update" />
+        </exec>
+		<condition property="version.folder" value="${dist.dev}/royale/${release.version}" >
+			<not>
+				<available file="${dist.dev}/royale/${release.version}" />
+			</not>
+		</condition>
+		<antcall target="add-version-folder" />
+	</target>
+    
+	<target name="add-version-folder" description="adds svn folder if needed" if="version.folder" >
+		<mkdir dir="${version.folder}" />
+		<exec executable="${svn}" dir="${dist.dev}/royale" failonerror="true" >
+			<arg value="add" />
+			<arg value="${version.folder}" />
+		</exec>
+	</target>
+		
+    <target name="mail" >
+        <!-- try to set line breaks before the vertical line            | -->
+        <echo file="${basedir}/discussthread.properties">discuss.thread.body=This is the discussion thread.\n\
+\n\
+Changes in this RC include:\n\
+\n\
+\n\
+Thanks,\n\
+${my.name}
+</echo>
+        <replace file="${basedir}/discussthread.properties">
+            <replacefilter token=" " value="%20" />
+            <replacefilter token="\n" value="${CRLF}" />
+        </replace>
+        <property file="${basedir}/discussthread.properties" />
+
+        <!-- try to set line breaks before the vertical line            | -->
+        <echo file="${basedir}/votethread.properties">vote.thread.body=Hi,\n\
+\n\
+This is vote for the ${release.version} release of Apache Royale.\n\
+\n\
+The release candidate can be found here;\n\
+https://dist.apache.org/repos/dist/dev/royale/${release.version}/rc${rc}/\n\
+\n\
+Before voting please review the section,'What are the ASF requirements on\n\
+approving a release?', at:\n\
+http://www.apache.org/dev/release.html#approving-a-release\n\
+\n\
+At a minimum you would be expected to check that:\n\
+- SHA and signed packages are correct\n\
+- README, RELEASE_NOTES, NOTICE and LICENSE files are all fine\n\
+- That the build script completes successfully\n\
+- That you can compile and cross-compile a simple example using the SDK.\n\
+\n\
+The source package is a combination of the 3 main Royale repos.\n\
+\n\
+To use the binary package, unzip it into a folder.  The -js package is\n\
+ready-to-use in an IDE or command-line.  If you need SWF output, use the\n\
+-royale package and use Apache Ant to run the InstallAdobeSDKs script via:\n\
+  ant -f InstallAdobeSDKs.xml\n\
+\n\
+You may also get the binary packages via NPM.  The -js package can be\n\
+installed via:\n\
+\n\
+npm install https://dist.apache.org/repos/dist/dev/royale/${release.version}/rc${rc}/binaries/apache-royale-${release.version}-bin-js.tar.gz -g\n\
+\n\
+The full package with SWF support can be installed via:\n\
+\n\
+npm install https://dist.apache.org/repos/dist/dev/royale/${release.version}/rc{rc}/binaries/apache-royale-${release.version}-bin-js-swf.tar.gz -g\n\
+\n\
+Maven artifacts are staged here:\n\
+https://repository.apache.org/content/repositories/orgapacheroyale-${maven.staging.folder.number}\n\
+\n\
+Please vote to approve this release:\n\
++1 Approve the release\n\
+-1 Disapprove the release (please provide specific comments to why)\n\
+\n\
+This vote will be open for 72 hours or until a result can be called.\n\
+\n\
+The vote passes if there is:\n\
+- At least 3 +1 votes from the PMC\n\
+- More positive votes than negative votes\n\
+\n\
+Remember that this is a 'beta-quality' release so I expect there\n\
+will be many bugs found.  IMO the goal is not to try to find and fix bugs\n\
+in the RC, but to make sure we have the packaging right, and enough\n\
+functionality that folks will have some success trying to use it.\n\
+\n\
+People who are not in PMC are also encouraged to test out the release and\n\
+vote, although their votes will not be binding, they can influence how the\n\
+PMC votes.\n\
+\n\
+When voting please indicate what OS, IDE, Flash Player version and AIR\n\
+version you tested with.\n\
+\n\
+For your convenience, there is an ant script that automates the common\n\
+steps to validate a release.  Instead of individually downloading the\n\
+package and signature files, unzipping, etc, you can instead:\n\
+1) create an empty folder,\n\
+2) download into that folder this file:\n\
+https://dist.apache.org/repos/dist/dev/royale/${release.version}/rc${rc}/ApproveRoyale.xml\n\
+3) run the script:\n\
+   ant -e -f ApproveRoyale.xml -Drelease.version=${release.version} -Drc=${rc}\n\
+   If you want to test SWF support during the approval, use:\n\
+   ant -e -f ApproveRoyale.xml -Drelease.version=${release.version} -Drc=${rc} -Duse-flash=true\n\
+\n\
+You are not required to use this script, and more testing of the packages\n\
+and build results are always encouraged.\n\
+\n\
+\n\
+Please put all discussion about this release in the DISCUSSION thread not\n\
+this VOTE thread.\n\
+\n\
+Thanks,\n\
+${my.name}
+</echo>
+        <replace file="${basedir}/votethread.properties">
+            <replacefilter token=" " value="%20" />
+            <replacefilter token="\n" value="${CRLF}" />
+        </replace>
+        <property file="${basedir}/votethread.properties" />
+        <echo file="${basedir}/votethread.html">&lt;html&gt;&lt;body&gt;&lt;a href=&quot;mailto:dev@royale.apache.org?subject=[DISCUSS]%20Discuss%20Release%20Apache%20Royale%20${release.version}%20RC${rc}&amp;body=${discuss.thread.body}&quot;&gt;Click here to review discuss thread&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;mailto:dev@royale.apache.org?subject=[VOTE]%20Release%20Apache%20Royale%20${release.version}%20RC${rc}&amp;body=${vote.thread.body}&quot;&gt;Click here to review vote thread&lt;/a&gt;&lt;/body&gt;&lt;/html&gt;</echo>
+        <makeurl file="${basedir}/votethread.html" property="vote.thread.url" />
+        <exec executable="${browser}">
+            <arg value="${vote.thread.url}" />
+        </exec>
+		<delete file="${basedir}/votethread.properties" />
+		<delete file="${basedir}/votethread.html" />
+		<delete file="${basedir}/discussthread.properties" />
+    </target>
+
+	<target name="release" depends="check-empty-folder,check-name-and-svn,credentials">
+        <antcall target="clone-asjs">
+            <param name="branch.name" value="org.apache.royale.framework-${release.version}-rc${rc}" />
+        </antcall>
+        <antcall target="clone-typedefs">
+            <param name="branch.name" value="org.apache.royale.typedefs-${release.version}-rc${rc}" />
+        </antcall>
+        <antcall target="clone-compiler">
+            <param name="branch.name" value="org.apache.royale.compiler-${release.version}-rc${rc}" />
+        </antcall>
+		<available file="${svn.dist.release}"
+			type="dir" 
+			property="dist.release" value="${svn.dist.release}" />
+    
+		<fail message="The svn.dist.release property is not set to the working copy for https://dist.apache.org/repos/dist/release."
+			unless="dist.release"/>
+				
+		<exec executable="${svn}" dir="${dist.release}/royale" failonerror="true" >
+			<arg value="update" />
+		</exec>
+		<exec executable="${svn}" dir="${dist.release}/royale" failonerror="true" >
+			<arg value="mv" />
+			<arg value="${dist.dev}/royale/${release.version}/rc${rc}" />
+            <arg value="${dist.release}/royale/${release.version}" />
+		</exec>
+		<exec executable="${svn}" dir="${dist.release}/.." failonerror="true" >
+			<arg value="commit" />
+			<arg value="--username" />
+			<arg value="${apache.username}" />
+			<arg value="--password" />
+			<arg value="${apache.password}" />
+			<arg value="-m" />
+			<arg value="Apache Royale ${release.version}" />
+		</exec>
+        <antcall target="release.tag" />
+        <!-- this is intended to merge the tag to master because it should have the right versions in it -->
+        <antcall target="merge_rc_to_master" />
+        <antcall target="get_head_of_rc_branches" />
+        <antcall target="update.versions" />
+        <antcall target="merge_rc_to_develop" />
+        <antcall target="release.maven.staging.repo" />
+        <echo>Also run the release.npm target</echo>
+	</target>
+
+    <target name="release.tag" depends="check-royale-asjs, check-royale-typedefs, check-royale-compiler">
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="tag" />
+            <arg value="-a" />
+            <arg value="apache-royale-${release.version}" />
+            <arg value="-m" />
+            <arg value="&quot;Official release of apache-royale-${release.version}&quot;" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="push" />
+            <arg value="--tags" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="tag" />
+            <arg value="-a" />
+            <arg value="apache-royale-${release.version}" />
+            <arg value="-m" />
+            <arg value="&quot;Official release of apache-royale-${release.version}&quot;" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="push" />
+            <arg value="--tags" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="tag" />
+            <arg value="-a" />
+            <arg value="apache-royale-${release.version}" />
+            <arg value="-m" />
+            <arg value="&quot;Official release of apache-royale-${release.version}&quot;" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="push" />
+            <arg value="--tags" />
+        </exec>
+    </target>
+    
+    <target name="get_head_of_rc_branches" depends="check-royale-asjs, check-royale-typedefs, check-royale-compiler">
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="release/${release.version}" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="release/${release.version}" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="release/${release.version}" />
+        </exec>
+    </target>
+    
+    <target name="get-next-version">
+        <input
+        message="Enter next release version"
+        addproperty="new.release.version"/>
+        <condition property="has.next.version">
+            <not>
+                <length string="new.release.version" length="0" />
+            </not>
+        </condition>
+    </target>
+    
+    <target name="update.versions" depends="check-royale-asjs, check-royale-typedefs, check-royale-compiler,get-next-version" if="has.next.version">
+        <replace file="${asjs}/build.properties"
+            token="release.version = ${release.version}"
+            value="release.version = ${new.release.version}" />
+        <replace file="${asjs}/package.json"
+            token="version&quot;: &quot;${release.version}"
+            value="version&quot;: &quot;${new.release.version}" />
+        <replace file="${asjs}/npm/js-only/package.json"
+            token="version&quot;: &quot;${release.version}"
+            value="version&quot;: &quot;${new.release.version}" />
+            <replace file="${asjs}/npm/js-swf/package.json"
+            token="version&quot;: &quot;${release.version}"
+            value="version&quot;: &quot;${new.release.version}" />
+        <replace
+            token="versionNumber&gt;${release.version}"
+            value="versionNumber&gt;${new.release.version}" >
+            <fileset dir="${asjs}/examples" >
+                <include name="royale/CordovaCameraExample/CordovaCameraExample-app.xml" />
+                <include name="royale/DesktopMap/DesktopMap-app.xml" />
+                <include name="royale/MapSearch/MapSearch-app.xml" />
+                <include name="royale/MobileMap/MobileMap-app.xml" />
+                <include name="royale/MobileStocks/MobileStocks-app.xml" />
+                <include name="royale/StorageExample/StorageExample-app.xml" />
+            </fileset>
+        </replace>
+        <replaceregexp file="${asjs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.compiler.version&gt;.*&lt;"/>
+            <substitution expression="royale.compiler.version&gt;${new.release.version}-SNAPSHOT&lt;"/>
+        </replaceregexp>
+        <replaceregexp file="${asjs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.typedefs.version&gt;.*&lt;"/>
+            <substitution expression="royale.typedefs.version&gt;${new.release.version}-SNAPSHOT&lt;"/>
+        </replaceregexp>
+        <replaceregexp file="${asjs}/archetypes/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.framework.version&gt;.*&lt;"/>
+            <substitution expression="royale.framework.version&gt;${new.release.version}-SNAPSHOT&lt;"/>
+        </replaceregexp>
+        <replaceregexp file="${asjs}/examples/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.framework.version&gt;.*&lt;"/>
+            <substitution expression="royale.framework.version&gt;${new.release.version}-SNAPSHOT&lt;"/>
+        </replaceregexp>
+        <replaceregexp file="${asjs}/manualtests/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.framework.version&gt;.*&lt;"/>
+            <substitution expression="royale.framework.version&gt;${new.release.version}-SNAPSHOT&lt;"/>
+        </replaceregexp>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="add" />
+            <arg value="." />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="update version to ${new.release.version}" />
+        </exec>
+        <replace file="${compiler}/build.properties"
+            token="release.version = ${release.version}"
+            value="release.version = ${new.release.version}" />
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="add" />
+            <arg value="." />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="update version to ${new.release.version}" />
+        </exec>
+        <replaceregexp file="${typedefs}/pom.xml" byline="true" encoding="UTF-8">
+            <regexp pattern="royale.compiler.version&gt;.*&lt;"/>
+            <substitution expression="royale.compiler.version&gt;${new.release.version}-SNAPSHOT&lt;"/>
+        </replaceregexp>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="add" />
+            <arg value="." />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="commit" />
+            <arg value="-m" />
+            <arg value="update version to ${new.release.version}" />
+        </exec>
+    </target>
+    
+    <target name="merge_rc_to_develop" depends="merge_to_asjs_develop, merge_to_typedefs_develop, merge_to_compiler_develop" />
+    <target name="merge_to_asjs_develop" depends="check-royale-asjs">
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="develop" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="pull" />
+            <arg value="--rebase" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="merge" />
+            <arg value="release/${release.version}" />
+        </exec>
+        <echo>Don't forget to push --all.  The script doesn't push because it expects conflicts</echo>
+    </target>
+    <target name="merge_to_typedefs_develop" depends="check-royale-typedefs">
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="develop" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="pull" />
+            <arg value="--rebase" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="merge" />
+            <arg value="release/${release.version}" />
+        </exec>
+        <echo>Don't forget to push --all.  The script doesn't push because it expects conflicts</echo>
+    </target>
+    <target name="merge_to_compiler_develop" depends="check-royale-compiler">
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="develop" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="pull" />
+            <arg value="--rebase" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="merge" />
+            <arg value="release/${release.version}" />
+        </exec>
+        <echo>Don't forget to push --all.  The script doesn't push because it expects conflicts</echo>
+    </target>
+    
+    <target name="merge_rc_to_master" depends="merge_to_asjs_master, merge_to_typedefs_master, merge_to_compiler_master" />
+    <target name="merge_to_asjs_master" depends="check-royale-asjs">
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="master" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="pull" />
+            <arg value="--rebase" />
+        </exec>
+        <exec executable="${git}" dir="${asjs}" failonerror="true" >
+            <arg value="merge" />
+            <arg value="apache-royale-${release.version}" />
+        </exec>
+        <echo>Don't forget to push --all.  The script doesn't push because it expects conflicts</echo>
+    </target>
+    <target name="merge_to_typedefs_master" depends="check-royale-typedefs">
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="master" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="pull" />
+            <arg value="--rebase" />
+        </exec>
+        <exec executable="${git}" dir="${typedefs}" failonerror="true" >
+            <arg value="merge" />
+            <arg value="apache-royale-${release.version}" />
+        </exec>
+        <echo>Don't forget to push --all.  The script doesn't push because it expects conflicts</echo>
+    </target>
+    <target name="merge_to_compiler_master" depends="check-royale-compiler">
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="checkout" />
+            <arg value="master" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="pull" />
+            <arg value="--rebase" />
+        </exec>
+        <exec executable="${git}" dir="${compiler}" failonerror="true" >
+            <arg value="merge" />
+            <arg value="apache-royale-${release.version}" />
+        </exec>
+        <echo>Don't forget to push --all.  The script doesn't push because it expects conflicts</echo>
+    </target>
+    
+    <target name="release.maven.staging.repo" >
+        <input
+        message="The Maven artifacts need to be released to Maven Central.  Press a key and your browser will open to Nexus, the staging repository UI.  Login.  Then choose Staging Repositories in the left list.  Then find the orgapacheroyale repo in the top list.  Check the checkbox for orgapacheroyale then click on the 'release' button to post the artifacts."/>
+        <exec executable="${browser}" spawn="true">
+            <arg value="http://repository.apache.org/" />
+        </exec>
+    </target>
+
+    <target name="release.npm" depends="check-name-and-svn,check-royale-asjs,use_release_branch,checkout-release-branch">
+        <input
+        message="To publish the npm artifacts, enter the npm password from the private@ list"
+        addproperty="npm.password"/>
+        
+        <available file="${svn.dist.release}"
+        type="dir"
+        property="dist.release" value="${svn.dist.release}" />
+        
+        <fail message="The svn.dist.release property is not set to the working copy for https://dist.apache.org/repos/dist/release."
+        unless="dist.release"/>
+        
+        <exec executable="npm" dir="${asjs}/npm/release-scripts" failonerror="true">
+            <arg value="install" />
+        </exec>
+        <exec executable="node" dir="${asjs}/npm/release-scripts" failonerror="true">
+            <arg value="publish.js" />
+            <arg value="--type=js-only" />
+            <arg value="--pathToTarball=${dist.release}/royale/${release.version}/binaries/apache-royale-${release.version}-bin-js.tar.gz" />
+            <arg value="--username=apache-royale-owner" />
+            <arg value="--password=${npm.password}" />
+        </exec>
+        <exec executable="node" dir="${asjs}/npm/release-scripts" failonerror="true">
+            <arg value="publish.js" />
+            <arg value="--type=js-swf" />
+            <arg value="--pathToTarball=${dist.release}/royale/${release.version}/binaries/apache-royale-${release.version}-bin-js-swf.tar.gz" />
+            <arg value="--username=apache-royale-owner" />
+            <arg value="--password=${npm.password}" />
+        </exec>
+    </target>
+
+</project>
