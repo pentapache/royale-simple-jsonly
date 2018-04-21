@@ -26,16 +26,11 @@ package org.apache.royale.core
         import flash.utils.getQualifiedSuperclassName;            
     }
 	
-    import org.apache.royale.core.styles.BorderStyles;
-    import org.apache.royale.core.layout.EdgeData;
-    import org.apache.royale.core.layout.LayoutData;
-    import org.apache.royale.core.layout.MarginData;
 	import org.apache.royale.events.EventDispatcher;
 	import org.apache.royale.events.ValueChangeEvent;
 	import org.apache.royale.events.ValueEvent;
-	import org.apache.royale.geom.Rectangle;
 	import org.apache.royale.utils.CSSUtils;
-	import org.apache.royale.utils.StringUtil;
+    import org.apache.royale.utils.StringUtil;
     
     /**
      *  The SimpleCSSValuesImpl class implements a minimal set of
@@ -50,13 +45,12 @@ package org.apache.royale.core
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
-     *  @productversion Royale 0.8
+     *  @productversion Royale 0.0
      */
-	public class SimpleCSSValuesImpl extends EventDispatcher implements IBorderPaddingMarginValuesImpl, ICSSImpl
+	public class SimpleCSSValuesImpl extends EventDispatcher implements IValuesImpl, ICSSImpl
 	{
 
         private static const INHERIT:String = "inherit";
-        private static const INDEX:String = "__index__";
 
         /**
          *  Constructor.
@@ -64,7 +58,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          */
 		public function SimpleCSSValuesImpl()
 		{
@@ -74,18 +68,6 @@ package org.apache.royale.core
         private var mainClass:Object;
         
 		private var conditionCombiners:Object;
-        
-        private var lastIndex:int = 0;
-
-        // the index of the selector that had the property.
-        // type selectors and global are given negative numbers
-        // so that class selectors and id selectors win.  Id selectors
-        // are given a value higher than the lastIndex so they
-        // always win over classSelectors.  This is set by
-        // each call to getStyle, so code that resolves shorthand
-        // can store it and use it to compare against the shorthand
-        // value to see which gets precedence.
-        protected var foundIndex:int = 0;
 
         /**
          *  @copy org.apache.royale.core.IValuesImpl#init()
@@ -93,7 +75,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          */
         COMPILE::SWF
         public function init(main:Object):void
@@ -163,7 +145,6 @@ package org.apache.royale.core
                             propFn.prototype = props;
                         }
                         newValues[selName] = new propFn();
-                        newValues[selName][INDEX] = lastIndex++;
                     }
                     // skip the propFn
                     props = cssData[i++];
@@ -180,7 +161,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          */
         COMPILE::SWF
         public function generateCSSStyleDeclarations(factoryFunctions:Object, arr:Array):void
@@ -272,7 +253,6 @@ package org.apache.royale.core
                             valuesFunction["prototype"] = o;
                             values[finalName] = new valuesFunction();
                         }
-                        values[finalName][INDEX] = lastIndex++;
                     }
                     declarationName = "";
                 }
@@ -327,7 +307,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          * 
          *  @royalesuppresspublicvarwarning
          */
@@ -339,9 +319,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         *  @royaleignorecoercion org.apache.royale.core.IStyleableObject
-         *  @royaleignorecoercion org.apache.royale.core.IChild
+         *  @productversion Royale 0.0
          */
 		public function getValue(thisObject:Object, valueName:String, state:String = null, attrs:Object = null):*
 		{
@@ -377,7 +355,7 @@ package org.apache.royale.core
                         //sets to undefined if not present
                         value = styleable.style[valueName];
                     }
-                    foundIndex = lastIndex * 2;
+
                     if (value === INHERIT)
                         return getInheritingValue(thisObject, valueName, state, attrs);
                     if (value !== undefined)
@@ -389,7 +367,6 @@ package org.apache.royale.core
                     o = values["#" + styleable.id];
                     if (o !== undefined)
                     {
-                        foundIndex = o[INDEX] + lastIndex;
                         value = o[valueName];
                         if (value === INHERIT)
                             return getInheritingValue(thisObject, valueName, state, attrs);
@@ -397,15 +374,7 @@ package org.apache.royale.core
                             return value;
                     }                    
                 }
-                // this className lookup is not true CSS.
-                // it will take the property from the last className
-                // in the list that specifies the property
-                // but in real CSS we would use the value in
-                // the last selector specified in the stylesheet,
-                // the order in the class list does not matter,
-                // only the order in the stylesheet
 				var classNames:String = styleable.className;
-                var classValue:*;
                 // undefined in JS null in AS
                 if (classNames != null)
                 {
@@ -418,35 +387,30 @@ package org.apache.royale.core
                             o = values["." + selectorName];
                             if (o !== undefined)
                             {
-                                foundIndex = o[INDEX];
                                 value = o[valueName];
                                 if (value === INHERIT)
-                                    classValue = getInheritingValue(thisObject, valueName, state, attrs);
+                                    return getInheritingValue(thisObject, valueName, state, attrs);
                                 if (value !== undefined)
-                                    classValue = value;
+                                    return value;
                             }
                         }
                         
                         o = values["." + className];
                         if (o !== undefined)
                         {
-                            foundIndex = o[INDEX];
                             value = o[valueName];
                             if (value === INHERIT)
-                                classValue = getInheritingValue(thisObject, valueName, state, attrs);
+                                return getInheritingValue(thisObject, valueName, state, attrs);
                             if (value !== undefined)
-                                classValue = value;
+                                return value;
                         }                        
                     }
                 }
-                if (classValue !== undefined)
-                    return classValue;
 			}
 			
             o = values["*"];			
             if (o !== undefined)
             {
-                foundIndex = lastIndex;
                 value = o[valueName];
                 if (value !== undefined)
                     return value;
@@ -469,7 +433,6 @@ package org.apache.royale.core
 					o = values[selectorName];
 					if (o !== undefined)
 					{
-                        foundIndex = 0 - o[INDEX];
 						value = o[valueName];
                         if (value === INHERIT)
                             return getInheritingValue(thisObject, valueName, state, attrs);
@@ -481,7 +444,6 @@ package org.apache.royale.core
 	            o = values[className];
 	            if (o !== undefined)
 	            {
-                    foundIndex = 0 - o[INDEX];
 	                value = o[valueName];
                     if (value === INHERIT)
                         return getInheritingValue(thisObject, valueName, state, attrs);
@@ -512,7 +474,6 @@ package org.apache.royale.core
                     return getValue(parentObject, valueName, state, attrs);
             }
             
-            foundIndex = 0 - lastIndex;
             o = values["global"];
             if (o !== undefined)
             {
@@ -521,9 +482,6 @@ package org.apache.royale.core
 			return undefined;
 		}
 		
-        /**
-         * @royaleignorecoercion org.apache.royale.core.IChild
-         */
         private function getInheritingValue(thisObject:Object, valueName:String, state:String = null, attrs:Object = null):*
         {
             var value:*;
@@ -556,7 +514,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          */
 		public function setValue(thisObject:Object, valueName:String, value:*):void
 		{
@@ -582,7 +540,7 @@ package org.apache.royale.core
 		 *  @langversion 3.0
 		 *  @playerversion Flash 10.2
 		 *  @playerversion AIR 2.6
-		 *  @productversion Royale 0.8
+		 *  @productversion Royale 0.0
 		 */
 		public function newInstance(thisObject:Object, valueName:String, state:String = null, attrs:Object = null):*
 		{
@@ -598,9 +556,8 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          *  @royaleignorecoercion Function
-         *  @royaleignorecoercion org.apache.royale.core.IDocument
          */
         public function getInstance(valueName:String):Object
         {
@@ -632,7 +589,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          */
         public function convertColor(value:Object):uint
         {
@@ -645,7 +602,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          */
         public function parseStyles(styles:String):Object
         {
@@ -703,7 +660,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
 		 *
 		 *  @royaleignorecoercion HTMLStyleElement
 		 *  @royaleignorecoercion CSSStyleSheet
@@ -767,7 +724,7 @@ package org.apache.royale.core
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
+         *  @productversion Royale 0.0
          */
         public static const inheritingStyles:Object = {
             "color" : 1,
@@ -846,421 +803,6 @@ package org.apache.royale.core
                 }
                 (thisObject.element as HTMLElement).style[p] = value;
             }
-        }
-        
-        COMPILE::JS
-        private var computedStyles:CSSStyleDeclaration;
-        
-        /**
-         *  Compute the width/thickness of the four border edges.
-         *  
-         *  @param object The object with style values.
-         *  @param quick True to assume all four edges have the same widths.
-         *  @return A Rectangle representing the four sides.
-         * 
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         *  @royaleignorecoercion String
-         */
-        public function getBorderStyles(object:IUIBase, state:String = null):BorderStyles
-        {
-            var bs:BorderStyles = new BorderStyles();
-            COMPILE::SWF
-            {
-                var border:Object = getValue(object, "border", state);
-                var borderIndex:int = foundIndex;
-                var borderWidth:Object = getValue(object, "border-width", state);
-                var widthIndex:int = foundIndex;
-                var borderStyle:Object = getValue(object, "border-style", state);
-                var styleIndex:int = foundIndex;
-                var borderColor:Object = getValue(object, "border-color", state);
-                var colorIndex:int = foundIndex;
-                if (borderStyle != null)
-                    bs.style = borderStyle as String;
-                else
-                    bs.style = "none";
-                if (borderColor != null)
-                    bs.color = CSSUtils.toColor(borderColor);
-                else
-                    bs.color = 0;
-                if (borderWidth != null)
-                {
-                    var borderOffset:Number;
-                    if (borderWidth is String)
-                        borderOffset = CSSUtils.toNumber(borderWidth as String, object.width);
-                    else
-                        borderOffset = Number(borderWidth);
-                    if( isNaN(borderOffset) ) borderOffset = 0;            
-                    bs.width = borderOffset;
-                }
-                else
-                    bs.width = 0;
-                // this code does not handle two things in the border shortcut, only 3 or 1
-                if (border != null)
-                {
-                    if (border is Array)
-                    {
-                        if (borderIndex > widthIndex)
-                            bs.width = CSSUtils.toNumber(String(border[0]), object.width);
-                        
-                        if (borderIndex > styleIndex)
-                            bs.style = String(border[1]);
-                        
-                        if (borderIndex > colorIndex)
-                            bs.color = CSSUtils.toColor(border[2]);
-                    }
-                    else
-                        bs.style = border as String;
-                }
-                if (borderStyle == "none")
-                    bs.width = 0;
-            }
-            COMPILE::JS
-            {
-                var madeit:Boolean;
-                if (!computedStyles)
-                {
-                    computedStyles = getComputedStyle(object.element, state);
-                    madeit = true;
-                }
-                bs.style = computedStyles["border-style"];  
-                bs.width = CSSUtils.toNumber(computedStyles["border-width"]);  
-                bs.color = CSSUtils.toColor(computedStyles["border-color"]);  
-                if (madeit)
-                    computedStyles = null;
-            }
-            return bs;
-        }
-        
-        /**
-         *  Compute the width/thickness of the four border edges.
-         *  
-         *  @param object The object with style values.
-         *  @param quick True to assume all four edges have the same widths.
-         *  @return A Rectangle representing the four sides.
-         * 
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         */
-        public function getBorderMetrics(object:IUIBase, state:String = null):EdgeData
-        {
-            var ed:EdgeData = new EdgeData();
-            COMPILE::SWF
-            {
-                var border:Object = getValue(object, "border", state);
-                var borderIndex:int = foundIndex;
-                var borderWidth:Object = getValue(object, "border-width", state);
-                var widthIndex:int = foundIndex;
-                var borderStyle:Object = getValue(object, "border-style", state);
-                var styleIndex:int = foundIndex;
-                // this code does not handle two things in the border shortcut, only 3 or 1
-                if (border != null)
-                {
-                    if (border is Array)
-                    {
-                        if (borderIndex > widthIndex)
-                            borderWidth = CSSUtils.toNumber(String(border[0]), object.width);
-                    
-                        if (borderIndex > styleIndex)
-                            borderStyle = String(border[2]);
-                    }
-                    else
-                        borderStyle = border;
-                }
-                var borderOffset:Number = 0;
-                if (borderStyle == "none" || borderStyle == null)
-                    borderOffset = 0;
-                else if (borderStyle != null && borderWidth != null)
-                {
-                    if (borderWidth is String)
-                        borderOffset = CSSUtils.toNumber(borderWidth as String, object.width);
-                    else
-                        borderOffset = Number(borderWidth);
-                    if( isNaN(borderOffset) ) borderOffset = 0;            
-                }
-                            
-                ed.top = borderOffset;
-                ed.left = borderOffset;
-                ed.right = borderOffset;
-                ed.bottom = borderOffset;
-                var value:*;
-                var values:Array;
-                var n:int;
-                value = getValue(object, "border-top");
-                if (value != null)
-                {
-                    if (value is Array)
-                        values = value as Array;
-                    else
-                        values = value.split(" ");
-                    n = values.length;
-                    ed.top = CSSUtils.toNumber(values[0]);
-                }
-                value = getValue(object, "border-left");
-                if (value != null)
-                {
-                    if (value is Array)
-                        values = value as Array;
-                    else
-                        values = value.split(" ");
-                    n = values.length;
-                    ed.left = CSSUtils.toNumber(values[0]);
-                }
-                value = getValue(object, "border-bottom");
-                if (value != null)
-                {
-                    if (value is Array)
-                        values = value as Array;
-                    else
-                        values = value.split(" ");
-                    n = values.length;
-                    ed.bottom = CSSUtils.toNumber(values[0]);
-                }
-                value = getValue(object, "border-right");
-                if (value != null)
-                {
-                    if (value is Array)
-                        values = value as Array;
-                    else
-                        values = value.split(" ");
-                    n = values.length;
-                    ed.right = CSSUtils.toNumber(values[0]);
-                }
-            }
-            COMPILE::JS
-            {
-                var madeit:Boolean;
-                if (!computedStyles)
-                {
-                    computedStyles = getComputedStyle(object.element, state);
-                    madeit = true;
-                }
-                ed.left = CSSUtils.toNumber(computedStyles["border-left-width"]);  
-                ed.right = CSSUtils.toNumber(computedStyles["border-right-width"]);  
-                ed.top = CSSUtils.toNumber(computedStyles["border-top-width"]);  
-                ed.bottom = CSSUtils.toNumber(computedStyles["border-bottom-width"]);
-                if (madeit)
-                    computedStyles = null;
-            }
-            return ed;
-        }
-        
-        /**
-         *  Compute the width/thickness of the four padding sides.
-         *  
-         *  @param object The object with style values.
-         *  @return A Rectangle representing the padding on each of the four sides.
-         * 
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         */
-        public function getPaddingMetrics(object:IUIBase, hostWidth:Number = NaN, hostHeight:Number = NaN, state:String = null):EdgeData
-        {
-            var ed:EdgeData = new EdgeData();
-            COMPILE::SWF
-            {
-                var paddingLeft:Object;
-                var paddingTop:Object;
-                var paddingRight:Object;
-                var paddingBottom:Object;
-                
-                var padding:Object = getValue(object, "padding");
-                paddingLeft = getValue(object, "padding-left");
-                paddingTop = getValue(object, "padding-top");
-                paddingRight = getValue(object, "padding-right");
-                paddingBottom = getValue(object, "padding-bottom");
-                ed.left = CSSUtils.getLeftValue(paddingLeft, padding, object.width);
-                ed.top = CSSUtils.getTopValue(paddingTop, padding, object.height);
-                ed.right = CSSUtils.getRightValue(paddingRight, padding, object.width);
-                ed.bottom = CSSUtils.getBottomValue(paddingBottom, padding, object.height);
-            }
-            COMPILE::JS
-            {
-                var madeit:Boolean;
-                if (!computedStyles)
-                {
-                    computedStyles = getComputedStyle(object.element, state);
-                    madeit = true;
-                }
-                ed.left = CSSUtils.toNumber(computedStyles["padding-left"]);  
-                ed.right = CSSUtils.toNumber(computedStyles["padding-right"]);  
-                ed.top = CSSUtils.toNumber(computedStyles["padding-top"]);  
-                ed.bottom = CSSUtils.toNumber(computedStyles["padding-bottom"]);
-                if (madeit)
-                    computedStyles = null;
-            }
-            return ed;
-        }
-        
-        
-        /**
-         *  Combine padding and border.  Often used in non-containers.
-         *  
-         *  @param object The object with style values.
-         *  @return A Rectangle representing the padding and border on each of the four sides.
-         * 
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         */
-        public function getBorderAndPaddingMetrics(object:IUIBase, hostWidth:Number = NaN, hostHeight:Number = NaN, state:String = null):EdgeData
-        {
-            COMPILE::JS
-            {
-                var madeit:Boolean;
-                if (!computedStyles)
-                {
-                    computedStyles = getComputedStyle(object.element, state);
-                    madeit = true;
-                }
-            }
-            var borderMetrics:EdgeData = getBorderMetrics(object);
-            var paddingMetrics:EdgeData = getPaddingMetrics(object);
-            borderMetrics.left += paddingMetrics.left;
-            borderMetrics.top += paddingMetrics.top;
-            borderMetrics.right += paddingMetrics.right;
-            borderMetrics.bottom += paddingMetrics.bottom;
-            COMPILE::JS
-            {
-                if (madeit)
-                    computedStyles = null;
-            }
-            return borderMetrics;
-        }
-        
-        /**
-         * Returns a MarginData for the given child.
-         * 
-         * @param child Object The element whose margins are required.
-         * @param hostWidth Number The usable width dimension of the host.
-         * @param hostHeight Number The usable height dimension of the host.
-         * 
-         * @return MarginData
-         *
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         *  @royaleignorecoercion String
-         */
-        public function getMargins(child:IUIBase, hostWidth:Number = NaN, hostHeight:Number = NaN, state:String = null):MarginData
-        {
-            var md:MarginData = new MarginData();
-            
-            COMPILE::SWF
-            {
-                var margin:Object = getValue(child, "margin");
-                var marginLeft:Object = getValue(child, "margin-left");
-                var marginTop:Object = getValue(child, "margin-top");
-                var marginRight:Object = getValue(child, "margin-right");
-                var marginBottom:Object = getValue(child, "margin-bottom");
-                var ml:Number = CSSUtils.getLeftValue(marginLeft, margin, child.width);
-                var mr:Number = CSSUtils.getRightValue(marginRight, margin, hostWidth);
-                var mt:Number = CSSUtils.getTopValue(marginTop, margin, hostHeight);
-                var mb:Number = CSSUtils.getBottomValue(marginBottom, margin, hostHeight);
-                if (marginLeft == "auto")
-                    ml = 0;
-                if (marginRight == "auto")
-                    mr = 0;
-                if (margin == "auto")
-                    ml = mr = mt = mb = 0;
-                
-                md.left = ml;
-                md.right = mr;
-                md.top = mt;
-                md.bottom = mb;
-                md.auto = (marginLeft == "auto" && marginRight == "auto") || margin == "auto";
-            }
-            COMPILE::JS
-            {
-                var madeit:Boolean;
-                if (!computedStyles)
-                {
-                    computedStyles = getComputedStyle(child.element, state);
-                    madeit = true;
-                }
-                var marginLeft:Object = computedStyles["margin-left"];
-                var marginTop:Object = computedStyles["margin-right"];
-                var marginRight:Object = computedStyles["margin-top"];
-                var marginBottom:Object = computedStyles["margin-bottom"];
-                md.left = marginLeft == "auto" ? 0: CSSUtils.toNumber(marginLeft as String);  
-                md.right = marginRight == "auto" ? 0: CSSUtils.toNumber(marginRight as String);  
-                md.top = marginTop == "auto" ? 0: CSSUtils.toNumber(marginTop as String);  
-                md.bottom = marginBottom == "auto" ? 0: CSSUtils.toNumber(marginBottom as String);
-                if (madeit)
-                    computedStyles = null;
-                md.auto = marginLeft == "auto" && marginRight == "auto";
-            }
-            return md;
-        }
-        
-        /**
-         * Returns an object containing the child's positioning values.
-         * 
-         * @param child Object The element whose positions are required.
-         * 
-         * @return Rectangle A structure of {top:Number, left:Number, bottom:Number, right:Number}
-         *
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         */
-        public function getPositions(child:IUIBase, hostWidth:Number = NaN, hostHeight:Number = NaN, state:String = null):EdgeData
-        {
-            var data:EdgeData = new EdgeData();
-            COMPILE::SWF
-            {
-                data.left = getValue(child, "left");
-                data.right = getValue(child, "right");
-                data.top = getValue(child, "top");
-                data.bottom = getValue(child, "bottom");
-            }
-            COMPILE::JS
-            {
-                var css:CSSStyleDeclaration = getComputedStyle(child.element, state);
-                data.left = CSSUtils.toNumber(css.left);
-                data.right = CSSUtils.toNumber(css.right);
-                data.top = CSSUtils.toNumber(css.top);
-                data.bottom = CSSUtils.toNumber(css.bottom);
-            }
-            return data;
-        }
-
-        /**
-         *  Combine padding and border.  Often used in non-containers.
-         *  
-         *  @param object The object with style values.
-         *  @return A Rectangle representing the padding and border on each of the four sides.
-         * 
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-         */
-        public function getBorderPaddingAndMargins(object:IUIBase, hostWidth:Number = NaN, hostHeight:Number = NaN, state:String = null):LayoutData
-        {
-            COMPILE::JS
-            {
-                computedStyles = getComputedStyle(object.element, state);
-            }
-            var out:LayoutData = new LayoutData();
-            out.border = getBorderMetrics(object, state);
-            out.padding = getPaddingMetrics(object, hostWidth, hostHeight, state);
-            out.margins = getMargins(object, hostWidth, hostHeight, state);
-            COMPILE::JS
-            {
-                computedStyles = null;
-            }
-            return out;
-
         }
 	}
 }

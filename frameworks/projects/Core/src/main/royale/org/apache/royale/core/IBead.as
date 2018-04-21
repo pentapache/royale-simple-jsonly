@@ -24,9 +24,9 @@ package org.apache.royale.core
      *  into small plug-ins that can be re-used in other components, or replaced with
      *  different implementations optimized for different things such as size,
      *  performance, advanced features, debugging, etc.
-     * 
+     *
      *  Beads are told what host component or "strand" they ae attached to.
-     *  
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -42,6 +42,7 @@ package org.apache.royale.core
          *  @playerversion AIR 2.6
          *  @productversion Royale 0.0
          */
+        function get strand():IStrand;
 		function set strand(value:IStrand):void
 	}
 }

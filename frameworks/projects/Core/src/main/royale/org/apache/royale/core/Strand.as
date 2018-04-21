@@ -24,7 +24,7 @@ package org.apache.royale.core
     /**
      *  The Strand class is the base class for non-display object
      *  that implement a strand.
-     *  
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -34,7 +34,7 @@ package org.apache.royale.core
 	{
         /**
          *  Constructor.
-         *  
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
@@ -44,20 +44,19 @@ package org.apache.royale.core
 		{
 			super();
 		}
-		
-		
+
+
 		private var _model:IBeadModel;
-                
+
         /**
          *  An IBeadModel that serves as the data model for the component.
          *  Note that there is no controller or view properties since
          *  this not a display object.
-         *  
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.9
-         *  @royaleignorecoercion org.apache.royale.core.IBead
+         *  @productversion Royale 0.0
          */
 		public function get model():IBeadModel
 		{
@@ -68,10 +67,9 @@ package org.apache.royale.core
             }
 			return _model;
 		}
-        
+
         /**
          *  @private
-         *  @royaleignorecoercion org.apache.royale.core.IBead
          */
 		public function set model(value:IBeadModel):void
 		{
@@ -81,12 +79,12 @@ package org.apache.royale.core
 				dispatchEvent(new Event("modelChanged"));
 			}
 		}
-		
+
 		private var _id:String;
 
         /**
          *  An id property for MXML documents.
-         *  
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
@@ -104,33 +102,40 @@ package org.apache.royale.core
 				dispatchEvent(new Event("idChanged"));
 			}
 		}
-				
+
         /**
          *  @copy org.apache.royale.core.Application#beads
-         *  
+         *
          *  The beads are not automatically added to the
          *  strand.  Subclasses must decide when to
          *  add the beads.
-         * 
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
          *  @productversion Royale 0.0
-         * 
-         *  @royalesuppresspublicvarwarning
          */
-		public var beads:Array;
-		
+		private var $beads:Array;
+
+		public function get beads():Array
+		{
+			return $beads;
+		}
+
+		public function set beads(value:Array):void
+		{
+			$beads = value;
+		}
+
 		private var _beads:Vector.<IBead>;
 
         /**
          *  @copy org.apache.royale.core.IStrand#addBead()
-         *  
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.9
-         *  @royaleignorecoercion org.apache.royale.core.IBeadModel
+         *  @productversion Royale 0.0
          */
 		public function addBead(bead:IBead):void
 		{
@@ -141,10 +146,10 @@ package org.apache.royale.core
 				_model = bead as IBeadModel;
 			bead.strand = this;
 		}
-		
+
         /**
          *  @copy org.apache.royale.core.IStrand#getBeadByType()
-         *  
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
@@ -159,16 +164,16 @@ package org.apache.royale.core
 			}
 			return null;
 		}
-		
+
         /**
          *  @copy org.apache.royale.core.IStrand#removeBead()
-         *  
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
          *  @productversion Royale 0.0
          */
-		public function removeBead(value:IBead):IBead	
+		public function removeBead(value:IBead):IBead
 		{
 			var n:int = _beads.length;
 			for (var i:int = 0; i < n; i++)
@@ -182,6 +187,6 @@ package org.apache.royale.core
 			}
 			return null;
 		}
-		        
+
 	}
 }

@@ -20,8 +20,8 @@
     "compilerOptions": {
         "debug": true,
         "targets": [
-            "JSRoyale",
-            "SWF"
+            "SWF",
+            "JSRoyale"
         ],
         "external-library-path": [
             "../../../../frameworks/libs/air/airglobal.swc"

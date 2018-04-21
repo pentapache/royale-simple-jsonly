@@ -31,7 +31,7 @@ package org.apache.royale.events
 		import org.apache.royale.events.Event;
 		import org.apache.royale.events.utils.EventUtils;
     }
-    
+
     import org.apache.royale.core.IRoyaleElement;
     import org.apache.royale.geom.Point;
     import org.apache.royale.utils.PointUtils;
@@ -101,7 +101,7 @@ package org.apache.royale.events
         // these map directly to JS MouseEvent fields.
         public function get clientX():Number
         {
-            return screenX;
+            return localX;
         }
         public function set clientX(value:Number):void
         {
@@ -109,7 +109,7 @@ package org.apache.royale.events
         }
         public function get clientY():Number
         {
-            return screenY;
+            return localY;
         }
         public function set clientY(value:Number):void
         {
@@ -143,7 +143,7 @@ package org.apache.royale.events
             }
             return _stagePoint.y;
         }
-        
+
         /**
          * @private
          */
@@ -169,7 +169,7 @@ package org.apache.royale.events
 		 */
 		public function set deltaX(value:int):void
 		{
-			
+
 		}
 
 		/**
@@ -188,7 +188,7 @@ package org.apache.royale.events
 		public function set deltaY(value:int):void
 		{
 			delta = value;
-		}        
+		}
         /**
          * Create a copy/clone of the Event object.
          *
@@ -248,7 +248,7 @@ package org.apache.royale.events
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
      *  @productversion Royale 0.0
-     * 
+     *
      *  @royalesuppresspublicvarwarning
      */
 	COMPILE::JS
@@ -309,7 +309,7 @@ package org.apache.royale.events
 		 * @type {?goog.events.BrowserEvent}
 		 */
 		private var wrappedEvent:Object;
-		
+
 		/**
 		 * @type {MouseEvent}
 		 */
@@ -406,7 +406,7 @@ package org.apache.royale.events
 		{
 			_deltaY = value;
 		}
-		
+
 		public var commandKey:Boolean;
 		public var controlKey:Boolean;
 		public var clickCount:int;

@@ -74,20 +74,11 @@ package org.apache.royale.utils
 		 *  @langversion 3.0
 		 *  @playerversion Flash 10.2
 		 *  @playerversion AIR 2.6
-		 *  @productversion Royale 0.9
-		 *  @royaleignorecoercion org.apache.royale.core.IChild
-		 *  @royaleemitcoercion org.apache.royale.core.IUIBase
-		 *  @royaleemitcoercion org.apache.royale.core.IPopUpHost
+		 *  @productversion Royale 0.0
 		 */
 		public static function findPopUpHost(start:IUIBase):IPopUpHost
 		{
-			while( start && !(start is IPopUpHost) ) {
-				// start.parent will be undefined in js if it's not an IChild and return null
-				COMPILE::SWF
-				{
-					if(!(start is IChild))
-						return null;
-				}
+			while( start != null && !(start is IPopUpHost) && start is IChild ) {
 				start = IChild(start).parent as IUIBase;
 			}
 			
@@ -103,15 +94,12 @@ package org.apache.royale.utils
 		 *  @langversion 3.0
 		 *  @playerversion Flash 10.2
 		 *  @playerversion AIR 2.6
-		 *  @productversion Royale 0.9
-		 *  @royaleignorecoercion org.apache.royale.core.IChild
-		 *  @royaleignorecoercion org.apache.royale.core.IPopUpHost
+		 *  @productversion Royale 0.0
 		 */
 		public static function removePopUp(popUp:IChild):void
 		{
-			//TODO (harbs) The loop appears to not be needed. If removeElement is being called, it seems like the IPopUpHost would be the direct parent.
 			var start:IParent = popUp.parent;
-			while(!(start is IPopUpHost)) {
+			while( start != null && !(start is IPopUpHost) && start is IChild ) {
 				start = IChild(start).parent;
 			}
 			(start as IPopUpHost).removeElement(popUp);

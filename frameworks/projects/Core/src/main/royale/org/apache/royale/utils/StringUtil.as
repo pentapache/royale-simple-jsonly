@@ -92,7 +92,7 @@ package org.apache.royale.utils
 			var args:Array;
 			if (len === 1 && rest[0] is Array)
 			{
-				args = rest[0];
+				args = rest[0] as Array;
 				len = args.length;
 			}
 			else

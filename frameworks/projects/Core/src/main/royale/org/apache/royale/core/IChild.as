@@ -18,10 +18,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 package org.apache.royale.core
 {
+
     /**
-     *  The IChild interface is the basic interface for a 
+     *  The IChild interface is the basic interface for a
      *  component that is parented by another component.
-     * 
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -29,10 +30,10 @@ package org.apache.royale.core
      */
     public interface IChild extends IRenderedObject
 	{
-        
+
         /**
          *  The parent.
-         * 
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
@@ -40,9 +41,27 @@ package org.apache.royale.core
          */
         [SWFOverride(returns="flash.display.DisplayObjectContainer")]
         function get parent():IParent;
-        
+        function set parent(value:IParent):void;
+
         COMPILE::JS
         function get positioner():WrappedHTMLElement;
-        
+
+        /**
+         *  Called by parent components when the component is
+         *  added via a call to addElement or addElementAt.
+         *
+         *  @langversion 3.0
+         *  @playerversion Flash 10.2
+         *  @playerversion AIR 2.6
+         *  @productversion Royale 0.0
+         */
+		function addedToParent():void;
+
+		/**
+		 * Invoked when the element instance has been removed
+		 * from its parent element.
+		 */
+		function removedFromParent():void;
+
 	}
 }

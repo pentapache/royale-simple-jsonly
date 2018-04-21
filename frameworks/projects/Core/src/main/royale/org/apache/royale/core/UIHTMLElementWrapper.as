@@ -120,9 +120,6 @@ COMPILE::SWF
             return _model;
         }
         
-        /**
-         * @royaleignorecoercion org.apache.royale.core.IBead
-         */
         [Bindable("modelChanged")]
         public function set model(value:Object):void
         {
@@ -138,7 +135,6 @@ COMPILE::SWF
         
         /**
          * @param bead The new bead.
-         * @royaleignorecoercion org.apache.royale.core.IBeadModel
          */
         override public function addBead(bead:IBead):void
         {

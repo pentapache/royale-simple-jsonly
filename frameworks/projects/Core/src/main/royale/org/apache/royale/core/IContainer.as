@@ -23,8 +23,8 @@ package org.apache.royale.core
      *  While most components are containers in the sense that they are composited
      *  from a set of child components, the term Container is commonly used in Flex
      *  to denote components that take an arbitrary set or sets of children and do
-     *  not try to abstract away that fact. 
-     *  
+     *  not try to abstract away that fact.
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -43,15 +43,5 @@ package org.apache.royale.core
          *  @productversion Royale 0.0
          */
 		function childrenAdded():void;
-		
-		/**
-		 * Returns a object to access the immediate children of the strand.
-         *
-         *  @langversion 3.0
-         *  @playerversion Flash 10.2
-         *  @playerversion AIR 2.6
-         *  @productversion Royale 0.8
-		 */
-		function get strandChildren():IParent;
 	}
 }

@@ -20,7 +20,7 @@ package org.apache.royale.core
 {
     /**
      *  The ISelectable interface is a marker interface for indicating a class has a selected property.
-     *  
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -31,7 +31,7 @@ package org.apache.royale.core
 
         /**
          *  <code>true</code> if the item is selected.
-         * 
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
@@ -39,6 +39,12 @@ package org.apache.royale.core
          */
 		function get selected():Boolean;
 		function set selected(value:Boolean):void;
-        
+
+        /**
+         * Returns the internal component that can be selected. This is useful
+         * for beads that need access to native element involved in the selection
+         * process.
+         */
+        function get controlElement():Object;
 	}
 }

@@ -21,7 +21,7 @@ package org.apache.royale.core
     /**
      *  The IPopUpHost interface is a "marker" interface for a component that
      *  parents components that implement IPopUp.
-     * 
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -29,5 +29,21 @@ package org.apache.royale.core
      */
     public interface IPopUpHost extends IParent
 	{
+		/**
+		 * Presents the component on top of all other all children at the given (x,y)
+		 * position relative to the upper-left corner of the IPopUpHost.
+		 */
+		function popUpAt(component:IChild, xpos:Number, ypos:Number):void;
+
+		/**
+		 * Presents the component on top of all other children centered within the
+		 * IPopUpHost's space.
+		 */
+		function popUpCentered(component:IChild):void;
+
+		/**
+		 * Removes the component popUp from the display.
+		 */
+		function popDown(component:IChild):void;
 	}
 }

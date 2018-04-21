@@ -25,10 +25,10 @@ package org.apache.royale.core
      *  into small plug-ins that can be re-used in other components, or replaced with
      *  different implementations optimized for different things such as size,
      *  performance, advanced features, debugging, etc.
-     * 
+     *
      *  Beads are added to and removed from a Strand and can find and coordinate with
      *  other beads on the strand.
-     *  
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -36,25 +36,31 @@ package org.apache.royale.core
      */
 	public interface IStrand
 	{
+		/**
+		 * The beads that make up this strand.
+		 */
+		function get beads():Array;
+		function set beads(value:Array):void;
+
         /**
          *  Add a bead to the strand.
          *
          *  @param bead The bead to be added.
-         * 
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
          *  @productversion Royale 0.0
          */
 		function addBead(bead:IBead):void;
-        
+
         /**
          *  Find a bead on the strand.
          *
          *  @param classOrInterface The class or interface to use
          *                                to search for the bead
          *  @return The bead.
-         * 
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
@@ -66,12 +72,13 @@ package org.apache.royale.core
          *  Remove a bead from the strand.
          *
          *  @param IBead bead The bead to be removed.
-         * 
+         *
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
          *  @productversion Royale 0.0
          */
-		function removeBead(bead:IBead):IBead;		
+		function removeBead(bead:IBead):IBead;
+
 	}
 }

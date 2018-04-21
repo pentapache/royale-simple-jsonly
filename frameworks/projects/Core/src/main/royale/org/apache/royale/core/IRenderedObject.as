@@ -20,12 +20,12 @@ package org.apache.royale.core
 {
 COMPILE::SWF
 {
-    import flash.display.DisplayObject;       
+    import flash.display.DisplayObject;
 }
     /**
-     *  The IRenderedObject interface is the basic interface for a 
+     *  The IRenderedObject interface is the basic interface for a
      *  component that has been rendered.
-     * 
+     *
      *  @langversion 3.0
      *  @playerversion Flash 10.2
      *  @playerversion AIR 2.6
@@ -33,12 +33,21 @@ COMPILE::SWF
      */
     public interface IRenderedObject
 	{
-        
+
         COMPILE::SWF
         function get $displayObject():DisplayObject;
-        
-        COMPILE::JS
-        function get element():WrappedHTMLElement;
+
+        /**
+		 * The native platform element behind the Royale Foundation component.
+		 */
+		COMPILE::JS {
+		function get element():WrappedHTMLElement;
+		function set element(value:WrappedHTMLElement):void;
+		}
+		COMPILE::SWF {
+		function get element():DisplayObject;
+		function set element(value:DisplayObject):void;
+		}
 
 	}
 }

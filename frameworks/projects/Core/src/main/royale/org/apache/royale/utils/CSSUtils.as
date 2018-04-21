@@ -33,6 +33,10 @@ package org.apache.royale.utils
 		/**
 		 * @private
 		 */
+		public function CSSUtils()
+		{
+			throw new Error("CSSUtils should not be instantiated.");
+		}
 		
         public static function attributeFromColor(value:uint):String
         {
@@ -253,9 +257,7 @@ package org.apache.royale.utils
          *  @langversion 3.0
          *  @playerversion Flash 10.2
          *  @playerversion AIR 2.6
-         *  @productversion Royale 0.9
-         *  @royaleignorecoercion Array
-         *  @royaleignorecoercion Number
+         *  @productversion Royale 0.0
          *  @royaleignorecoercion String
          */
         public static function getSideValue(value:Object, values:Object, side:int, reference:Number = NaN):Number
