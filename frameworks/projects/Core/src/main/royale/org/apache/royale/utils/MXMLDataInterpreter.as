@@ -321,6 +321,9 @@ public class MXMLDataInterpreter
         if (comp is IDocument)
             comp.setDocument(document, id);
 
+        if (comp is IEventDispatcher)
+        	(comp as IEventDispatcher).dispatchEvent(new Event("initialized"));
+
         return i;
     }
 
