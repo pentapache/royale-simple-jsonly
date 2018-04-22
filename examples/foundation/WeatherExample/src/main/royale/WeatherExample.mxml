@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+<rf:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+                   xmlns:rf="library://ns.apache.org/royale/foundation"
+                   xmlns:js="library://ns.apache.org/royale/basic" 
+                   xmlns:controllers="controllers.*"
+                   xmlns:models="models.*"
+                   xmlns:local="*"
+                   applicationComplete="setup()">
+    <!--
+    	This application shows how to query a remote server for data and display
+    	that data using Foundation containers and controls. A weather data server,
+    	via APIUX (using their free service), returns JSON data which is parsed when
+    	needed into ActionScript objects and displayed. You can find examples of
+    	the IDataProvider interface in the SelectList controls as well as an example
+    	of using Panel with a ControlBar.
+    	
+    	Note that the MXML is defines the UI elements while the style sheet determines
+    	layout and appearance. 
+    -->
+    <fx:Style>
+    	@namespace rf "library://ns.apache.org/royale/foundation";
+    	
+    	rf|Application {
+    		background-color: white;
+    	}
+    	
+    	.WeatherPanel {
+    		width: 400px;
+    		height: 400px;
+    	}
+    	
+    	.WeatherPanel .panel_contentArea {
+    		padding: 0;
+    	}
+    	
+    	.SearchBar {
+    		margin: 0;
+    		padding: 6px;
+    		background-color: lightgray;
+    	}
+    	
+    	.Results {
+    		padding: 20px 6px 6px 20px;
+    		background-color: white;
+    	}
+    	
+    	.Conditions {
+    		min-height: 70px;
+    	}
+    	
+    	.Temps {
+    		margin-top: 20px;
+    	}
+    	
+    	.StatusText {
+    		flex-grow: 1;
+    	}
+    	
+    	#weatherCity {
+    		font-size: 15px;
+    		font-weight: bold;
+    	}
+    	
+    	#weatherCondition {
+    		font-weight: bold;
+    		line-height: 70px;
+    		margin-left: 20px;
+    	}
+    	
+    	#weatherTemp {
+    		font-size: 36px;
+    		font-weight: bold;
+    		align-self: center;
+    	}
+    	
+    	#weatherWind {
+    		font-size: 18px;
+    		margin-left: 40px;
+    	}
+    	
+    	#weatherHumidity {
+    		font-size: 18px;
+    		color: lightblue;
+    		margin-left: 40px;
+    	}
+    	
+    </fx:Style>
+    
+    <fx:Script>
+    	<![CDATA[
+    		import org.apache.royale.events.Event;
+			import org.apache.royale.collections.LazyObject;
+			import org.apache.royale.foundation.core.IList;
+			import org.apache.royale.foundation.controls.Alert;
+    		import models.WeatherModel;
+    		import controllers.UnitsController;
+			
+			// -----------------------------------------------
+			// Free APIXU weather data query prefix
+			// -----------------------------------------------
+						
+        	private var queryBegin:String = "http://api.apixu.com/v1/current.json?key=f0e48fe7d2b54030a9321510181404";
+    	
+
+			// ---------------------------------------------------------------
+			//
+			// Methods
+			//
+			// ---------------------------------------------------------------
+			
+			// -----------------------------------------------
+			// setup
+			// -----------------------------------------------
+    		
+    		private function setup():void
+    		{
+    			weatherModel.addEventListener("responseDataChanged", handleResponseChanges);
+    		}
+			
+			// -----------------------------------------------
+			// clearDisplayWithStatus
+			// -----------------------------------------------
+    		
+    		private function clearDisplayWithStatus(message:String):void
+    		{
+    			weatherCity.text = "";
+            	weatherCondition.text = "";
+            	weatherIcon.visible = false;
+            	weatherTemp.text = "";
+            	weatherWind.text = "";
+            	weatherHumidity.text = "";
+            	
+            	status.text = message;
+    		}
+			
+			// -----------------------------------------------
+			// getWeather
+			// -----------------------------------------------
+    		
+    		private function getWeather():void
+    		{    		
+    			var city:String = cityTI.text;
+    			if (city == "") {
+    				Alert.showNativeAlert("Enter a city or US postal code");
+    				return;
+    			}
+    				
+    			clearDisplayWithStatus("Getting weather for "+city);
+    			
+    			var useURL:String = queryBegin + "&q=" + city.replace(" ","+");
+    			trace(useURL);
+    			
+				service.url = useURL;
+            	lazyObject.addEventListener("complete", completeHandler);
+            	service.send();
+    		}
+
+			// ---------------------------------------------------------------
+			//
+			// Event handlers
+			//
+			// ---------------------------------------------------------------
+			
+			// -----------------------------------------------
+			// completeHandler
+			// -----------------------------------------------
+			
+       		private function completeHandler(event:Event):void
+            {
+            	// setting this value from the lazyObject triggers the
+            	// event to handle display the changes. 
+			    weatherModel.responseData = lazyObject.getItem();
+            }
+			
+			// -----------------------------------------------
+			// handleResponseChanges
+			// -----------------------------------------------
+            
+            private function handleResponseChanges(event:Event):void
+            {
+            	status.text = "";
+            	            	
+            	if (weatherModel.isError) {
+            		clearDisplayWithStatus("Error from Weather Service");
+            		Alert.showNativeAlert(weatherModel.errorMessage);
+            		return;
+            	}
+            	
+            	weatherModel.unitType = unitsList.unitType;
+            	
+            	weatherCity.text = weatherModel.location;
+            	weatherCondition.text = weatherModel.conditions;
+            	weatherIcon.src = weatherModel.iconURL;
+            	weatherIcon.visible = true;
+            	weatherTemp.text = weatherModel.temperature;
+            	weatherWind.text = weatherModel.wind;
+            	weatherHumidity.text = weatherModel.humidity + " humidity";
+            }
+    	]]>
+    </fx:Script>
+    
+    <!-- ==========================================================
+         model
+         ========================================================== -->
+    
+    <rf:model>
+    	<models:WeatherModel id="weatherModel" />
+    </rf:model>
+    
+    <!-- ==========================================================
+         beads
+         ========================================================== -->
+     
+  	<rf:beads>
+  		<!-- load the bead which manages the city selection list
+  		     along with the text input field.
+  		-->
+  		<controllers:CityListController />
+  		
+  		<!-- load the bead which manages the result type selection
+  		     list.
+  		 -->
+  		<controllers:UnitsController id="unitsList" />
+  		
+  		<!-- Use HTTPService to access the remote server for weather data. The result
+  		     is stored in a LazyObject which will parse the server's result when needed.
+  		  -->  		
+        <js:HTTPService id="service">
+            <js:LazyObject id="lazyObject">
+                <js:inputParser>
+                    <js:JSONInputParser />
+                </js:inputParser>
+                <js:itemConverter>
+                    <local:StockDataJSONItemConverter />
+                </js:itemConverter> 
+            </js:LazyObject>
+        </js:HTTPService>
+  	</rf:beads>
+    
+    <!-- ==========================================================
+         Main panel
+         ========================================================== -->
+  	
+  	<rf:Panel title="Weather" className="WeatherPanel">
+  		<rf:VBox>
+  			<rf:HBox className="SearchBar">
+				<rf:TextInput id="cityTI" placeHolder="City or Postal Code (US)" />
+				<rf:SelectList id="cityList" />
+				<rf:SelectList id="unitTypes" />
+  			</rf:HBox>
+  			<rf:VBox className="Results">
+				<rf:Label id="weatherCity" />
+				<rf:FlexBox className="Conditions">
+					<rf:Image id="weatherIcon" />
+					<rf:Label id="weatherCondition" />
+				</rf:FlexBox>
+				<rf:FlexBox className="Temps">
+					<rf:Label id="weatherTemp" />
+					<rf:VBox>
+						<rf:Label id="weatherWind" />
+						<rf:Label id="weatherHumidity" />
+					</rf:VBox>
+				</rf:FlexBox>
+  			</rf:VBox>
+  		</rf:VBox>
+  		<rf:controlBar>
+  			<rf:Label id="status" className="StatusText"/>
+			<rf:Button label="Get Weather" click="getWeather()" />
+  		</rf:controlBar>
+  	</rf:Panel>
+
+</rf:Application>

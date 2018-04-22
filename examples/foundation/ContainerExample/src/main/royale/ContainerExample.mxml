@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+<rf:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+                   xmlns:rf="library://ns.apache.org/royale/foundation">
+    <!--
+    	This application shows different Container layouts. While running
+    	this example in a browser, experiment with changes to sizes and
+    	flex style settings. For example, 
+    -->
+    <fx:Style>
+    	@namespace rf "library://ns.apache.org/royale/foundation";
+    	
+    	rf|Application {
+    		background-color: white;
+    	}
+    	
+    	rf|Panel .panel_contentArea > * {
+    		margin-top: 8px;
+    		margin-bottom: 8px;
+    	}
+    	
+    	.ApplicationWrapper > * {
+    		margin-left: 8px;
+    		margin-right: 8px;
+    		vertical-align: top;
+    	}
+    	
+    	.SomeBox {
+    		border: 1px solid gray;
+    		background-color: aliceblue;
+    		padding: 2px;
+    	}
+    	
+    	.MiddleButton {
+    		flex-grow: 1;
+    	}
+    	
+    	.ControlBarFlexSpace {
+    		flex-grow: 1;
+    	}
+    	
+    	.ColorfulBoxes > * {
+    		margin-top: 2px;
+    		margin-bottom: 2px;
+    	}
+    	
+    	.RedRect {
+    		fill: red;
+    	}
+    	
+    	.OrangeRect {
+    		fill: orange;
+    		border: 2px solid purple;
+    	}
+    	
+    	.GreenRect {
+    		fill: green;
+    		opacity: 0.4;
+    	}
+    	
+    </fx:Style>
+    
+    <fx:Script>
+    	<![CDATA[
+    	]]>
+    </fx:Script>
+     
+    <!-- 
+    	This makes the entire application a horizontal box 
+    -->
+  	<rf:beads>
+  		<rf:HorizontalLayout />
+  	</rf:beads>
+  	
+  	<!--
+  		A standard vertical layout. The widest element determines the width
+  		of this container.
+  	-->
+  	<rf:VBox className="SomeBox">
+  		<rf:Label text="Vertical Box (VBox)" />
+  		<rf:Button label="Button One" />
+  		<rf:Button label="Button Two" />
+  		<rf:Button label="Button Three" />
+  		<rf:Button label="Button Four" />
+  	</rf:VBox>
+  	
+  	<!--
+  		The FlexBox lets one or more children grow and shrink to fill
+  		the space. This example is mostly default styles, but the MiddleButton
+  		style sets flex-grow:1 so that element will size to fill the space.
+  	-->
+  	<rf:FlexBox className="SomeBox" direction="vertical" height="300">
+  		<rf:Label text="Flexible Vertical Box (FlexBox)" />
+  		<rf:Button label="Left" />
+  		<rf:Button label="Middle" className="MiddleButton" />
+  		<rf:Button label="Right" />
+  	</rf:FlexBox>
+  	
+  	<!--
+  		A collection of HBox containers, stacked vertically to better use
+  		space on the page.
+  	-->
+  	<rf:VBox className="SomeBox">
+  		<rf:Label text="Vertical Box with Horizontal Boxes" />
+  		<rf:Spacer height="20" />
+  	
+  		<!--
+  			A standard HBox with the largest element determining the
+  			height of the HBox.
+  		-->
+		<rf:Label text="Horizontal Box (HBox)" />
+		<rf:HBox className="SomeBox">
+			<rf:Button label="Button One" />
+			<rf:Button label="Button Two" />
+			<rf:Button label="Button Three" />
+			<rf:Button label="Button Four" />
+		</rf:HBox>
+		
+		<rf:Spacer height="20" />
+	
+		<!--
+			Another FlexBox, this time horizontally oriented (the default
+			direction). 
+		-->
+		<rf:Label text="Flexible Horizontal Box (FlexBox)" />
+		<rf:FlexBox className="SomeBox" width="300">
+			<rf:Button label="Left" />
+			<rf:Button label="Middle" className="MiddleButton" />
+			<rf:Button label="Right" />
+		</rf:FlexBox>	
+	</rf:VBox>
+	
+	<rf:Panel title="Panel" width="350" height="200">
+		<rf:leftItems>
+			<rf:Button label="Back" />
+		</rf:leftItems>
+		<rf:rightItems>
+			<rf:Button label="Search" />
+			<rf:Button label="Done" />
+		</rf:rightItems>
+		
+		<rf:VBox>
+			<rf:Label text="Thing inside a Panel"/>
+			<rf:Button label="Push Me" click="status.text='Status changed'" />
+		</rf:VBox>
+		
+		<rf:controlBar>
+			<rf:Label id="status" text="Status Indicator" />
+			<rf:Spacer className="ControlBarFlexSpace" />
+			<rf:Button label="Right Side" />
+		</rf:controlBar>
+	</rf:Panel>
+	
+	<rf:VBox className="ColorfulBoxes">
+		<rf:Label text="Box of Rectangle (SVG) elements" />
+		<rf:Rectangle className="RedRect" width="100" height="50" />
+		<rf:Rectangle className="OrangeRect" width="150" height="75" />
+		<rf:Rectangle className="GreenRect" width="50" height="100" />
+	</rf:VBox>
+
+</rf:Application>

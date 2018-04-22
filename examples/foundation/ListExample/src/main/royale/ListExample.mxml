@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+<rf:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+                   xmlns:rf="library://ns.apache.org/royale/foundation"
+                   implements="org.apache.royale.foundation.core.IItemRendererFactory"
+                   applicationComplete="setup()">
+    <!--
+    	This application shows a DataList and a DataTable. Note that is class
+    	is also an itemRendererFactory - it delivers the itemRenderers for the DataList.
+    	The DataTable uses a separate class (SalesFactory) for its itemRendererFactory.
+    -->
+    <fx:Style>
+    	@namespace rf "library://ns.apache.org/royale/foundation";
+    	
+    	rf|Application {
+    		background-color: white;
+    	}
+    	
+    	/* -------------------------------------
+    	 * Overrides
+    	 * -------------------------------------- */
+    	
+    	.HorizontalLayout > * {
+    		margin-left: 16px;
+    		margin-right: 16px;
+    		vertical-align: top;
+    	}
+    	
+    	/* -------------------------------------
+    	 * This Application
+    	 * -------------------------------------- */
+    	 
+    	 .ApplicationWrapper > * {
+    	 	display: inline-block;
+    	 }
+    	
+    	#mainList {
+    		overflow: auto;
+    	}
+    	
+    	.DataTableHeaderRenderer {
+    		line-height: 24px;
+    		padding: 4px;
+    	}
+    	
+    	.DataTableItemRenderer {
+    		line-height: 22px;
+    		padding: 4px;
+    	}
+    	
+    	.DataTableItemRenderer .Label {
+    		margin-left: 5px;
+    	}
+    	
+    	.DataTableItemRenderer .Image {
+    		vertical-align: middle;
+    	}
+    	
+    	.DataTableItemRenderer .Ellipse {
+    		vertical-align: middle;
+    	}
+    	
+    	.RedRect {
+    		fill:red;
+    	}
+    	
+    	.GoldRect {
+    		fill:gold;
+    	}
+    	
+    	.GreenRect {
+    		fill:green;
+    	}
+    	
+    	.BlueRect {
+    		fill:blue;
+    	}
+    </fx:Style>
+    
+    <fx:Script>
+    	<![CDATA[
+    		import org.apache.royale.events.Event;
+    		import org.apache.royale.foundation.core.IDataProvider;
+    		import org.apache.royale.foundation.core.IList;
+    		import org.apache.royale.foundation.core.IItemRenderer;
+    		import org.apache.royale.foundation.core.Style;
+    		import org.apache.royale.foundation.controls.CheckBox;
+    		
+    		private var _states:Array = ["Maine","Vermont","New Hampshire",
+    		                             "Massachusetts","Connecticut",
+    		                             "Rhode Island"];
+    		
+    		// -------------------------------------------------------
+    		// Setup
+    		// --------------------------------------------------------
+    		
+    		private function setup():void
+    		{    			
+    			// For the states list, this class is its IItemRendererFactory.
+    			statesList.itemRendererFactory = this;	
+    			
+    			// For the sales table, create an instance of the SalesFactory
+    			// which provides the table with its headers and item renderers.
+    			salesTable.itemRendererFactory = new SalesFactory();
+    		}
+    		
+    		// -------------------------------------------------------
+    		// IItemRendererFactory
+    		// --------------------------------------------------------
+    		
+    		/**
+    		 * This class is also an IItemRendererFactory for the DataList.
+    		 */
+    		
+    		public function numItems(list:IList):int
+    		{
+    			return _states.length;
+    		}
+    		
+    		public function itemRendererAt(list:IList, index:int):IItemRenderer
+    		{
+    			var renderer:ListItem = new ListItem();
+    			renderer.data = _states[index];
+    			return renderer;
+    		}
+    		
+    		// -------------------------------------------------------
+    		// Local Functions
+    		// --------------------------------------------------------
+    		
+    		public function listChange():void
+    		{
+    			var msg:String = "Item "+statesList.selectedIndex+" picked";
+    			outputList.text = msg;
+    		}
+    		
+    		public function tableChange():void
+    		{
+    			var msg:String = "Row "+salesTable.selectedIndex+", Col "+
+    				salesTable.selectedCol+" picked";
+    			outputTable.text = msg;
+    		}
+    		
+    	]]>
+    </fx:Script>
+     
+  	<rf:beads>
+  		<rf:HorizontalLayout />
+  	</rf:beads>
+  	
+  	<rf:VBox>
+  		<rf:CheckBox label="Allow Selection" selected="true" change="statesList.selectable=event.target.selected" />
+  		<rf:Spacer height="10"/>
+  		<rf:DataList id="statesList" change="listChange()" />
+  		<rf:Spacer height="10"/>
+  		<rf:Label id="outputList" />
+  	</rf:VBox>
+  	
+  	<rf:VBox>
+  		<rf:CheckBox label="Allow Selection" selected="true" change="salesTable.selectable=event.target.selected" />
+  		<rf:Spacer height="10"/>
+		<rf:DataTable id="salesTable" width="300" change="tableChange()">
+			<rf:DataTableColumn label="Year" width="20%" dataField="year" />
+			<rf:DataTableColumn label="Product" width="58%" dataField="product" />
+			<rf:DataTableColumn label="Sales" width="22%" dataField="sales" />
+		 </rf:DataTable>
+  		<rf:Spacer height="10"/>
+  	 	<rf:Label id="outputTable" />
+  	 </rf:VBox>
+	
+
+</rf:Application>

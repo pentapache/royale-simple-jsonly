@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+<rf:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+                   xmlns:rf="library://ns.apache.org/royale/foundation"
+                   implements="org.apache.royale.foundation.core.IDataProvider"
+                   applicationComplete="setup()">
+                   
+	<!--
+		This example app shows nearly every UI control in the Foundation
+		toolkit. Note that this class also implements IDataProvider (mentioned
+		below) to supply values to the SelectList control.
+	-->
+       
+    <fx:Style>
+    	@namespace rf "library://ns.apache.org/royale/foundation";
+    	
+    	rf|Application {
+    		background-color: white;
+    	}
+    	
+    	rf|ViewStack {
+    		padding: 6px;
+    		margin-top: 10px;
+    	}
+    	
+    	/* -------------------------------------
+    	 * Overrides
+    	 * -------------------------------------- */
+    	
+    	.VerticalLayout {
+    		vertical-align: top;
+    	}
+    	
+    	.VerticalLayout > :first-child {
+    		margin-top: 0px;
+    	}
+    	
+    	.VerticalLayout > :last-child {
+    		margin-bottom: 0px;
+    	}
+    	
+    	.VerticalLayout > * {
+    		margin-top: 8px;
+    		margin-bottom: 8px;
+    	}
+    	
+    	.HorizontalLayout > :first-child {
+    		margin-right: 0px;
+    	}
+    	
+    	.HorizontalLayout > :last-child {
+    		margin-left: 0px;
+    	}
+    	
+    	.HorizontalLayout > * {
+    		margin-left: 8px;
+    		margin-right: 8px;
+    	}
+    	
+    	.AbsoluteLayout {
+    		width: 300px;
+    		height: 300px;
+    		background-color: #FEFECC;
+    	}
+    	
+    	#datePicker { /* overriding the default style */
+    		border: none;
+    		width: 100%;
+    	}
+    	
+    	/* -------------------------------------
+    	 * This Application
+    	 * -------------------------------------- */
+    	 
+    	 .SimplePanel {
+    	 	background-color: #EFEFEF;
+    	 }
+    	
+    	#navAreaBox {
+    		padding: 4px;
+    	}
+    	
+    	#subscriptionType {
+    		width: 100%;
+    		text-align: center;
+    	}
+    	
+    	.Title {
+    		font-family: Arial;
+    		font-size: 16px;
+    		font-weight: bold;
+    	}
+    	
+    	.Plan {
+    		font-size: 12px;
+    		width: 50%;
+    		color: #666699;
+    	}
+    	
+    	.TabBox {
+    		border: 1px solid black;
+    		max-width: 207px;
+    	}
+    	
+    	.ImageBox > :first-child {
+    		margin-right: 4px;
+    	}
+    	
+    	.ImageBox > :last-child {
+    		margin-left: 4px;
+    	}
+    	
+    	.RedGraphic {
+    		fill: red;
+    		border: 1 solid blue;
+    		opacity: 0.5;
+    	}
+    	
+    	/* -------------------------------
+    	 * Green Square Button
+    	 * ------------------------------- */
+    	.GreenSquare {
+    		background: url('assets/smallgreenrect.jpg') no-repeat 2px center;
+    		padding-left: 19px;
+    		min-height: 22px;
+    		border: 0.5px solid #777777;
+    	}
+    	.GreenSquare:hover {
+    		color: green;
+    		background-color: white;
+    	}
+    	.GreenSquare:active {
+    		background-color: #008800;
+    		color: white;
+    	}
+    	
+    	/* -------------------------------
+    	 * Red Square Button
+    	 * ------------------------------- */
+    	.RedSquare {
+    		background: url('assets/mediumredrect.jpg') no-repeat 2px center;
+    		padding-left: 35px;
+    		min-height: 36px;
+    		border: 0.5px solid #777777;
+    	}
+    	.RedSquare:hover {
+    		color: red;
+    		background-color: white;
+    	}
+    	.RedSquare:active {
+    		background-color: #880000;
+    		color: white;
+    	}
+    	
+    	/* -------------------------------
+    	 * Output display at bottom of page
+    	 * ------------------------------- */
+    	#outputArea {
+    		position: absolute;
+    		left: 0px;
+    		right: 0px;
+    		bottom: 0px;
+    		height: 100px;
+    		margin: 0; 
+    		text-align: center;
+    		background-color: lightgray;
+    	}
+    	
+    	#outputArea .Label {
+    		font-size: 18px;
+    		line-height: 100px;
+    	}
+    </fx:Style>
+    
+    <fx:Script>
+    	<![CDATA[
+    		import org.apache.royale.events.Event;
+    		import org.apache.royale.foundation.core.IDataProvider;
+    		import org.apache.royale.foundation.core.IList;
+    		import org.apache.royale.foundation.core.IItemRenderer;
+    		import org.apache.royale.foundation.core.Style;
+    		import org.apache.royale.foundation.controls.Alert;
+    		import org.apache.royale.foundation.controls.CheckBox;
+    		
+    		private function setup():void
+    		{
+    			// set this class as the dataProvider for the ButtonBar, which does
+    			// not support IItemRendererFactory (since the itemRenderer is a button).
+    			bbar.dataProvider = this;
+    			
+    			// the picker is a List but only supports IDataProvider since
+    			// the elements on the list are specific to this control.
+    			picker.dataProvider = this;
+    		}
+    		
+    		// -------------------------------------------------------
+    		// IDataProvider
+    		// --------------------------------------------------------
+    		
+    		private var _buttons:Array = ["Calendar", "Single Label", "Text Block"];
+    		
+    		private var _states:Array = ["California", "Florida", "New York", 
+    		                              "Nebraska", "Maine", "Massachusetts", 
+    		                              "Maryland", "Ohio"];
+    		
+    		/**
+    		 * This function is present in both IDataProvider and IItemRendererFactory
+    		 * interfaces, so the list parameter is used to determine what value
+    		 * to return.
+    		 */
+    		public function numItems(list:IList):int
+    		{
+    			if (list == bbar) return _buttons.length;
+    			else if (list == picker) return _states.length;
+    			else return 0;
+    		}
+    		
+    		public function itemAt(list:IList, index:int):Object
+    		{
+    			if (list == bbar) return _buttons[index];
+    			else if (list == picker) return _states[index];
+    			else return null;
+    		}
+    		
+    		public function labelFieldAt(list:IList, index:int):String
+    		{
+    			// this function isn't used since both controls that
+    			// use IDataProvider use String arrays.
+    			return null;
+    		}
+    		
+    		// -------------------------------------------------------
+    		// Local Functions
+    		// --------------------------------------------------------
+    		
+    		private function DoSomething():void
+    		{
+    			trace("DoSomething happened");
+    			notice.text = "Shorter.";
+    		}
+    		
+    		private function makeSmaller():void
+    		{
+    			trace("Make smaller");
+    			navAreaBar.width = 220;
+    			navAreaBox.width = 220;
+    		}
+    		
+    		private function changeColor(event:Event):void
+    		{
+    			var checkBox:CheckBox = event.target as CheckBox;
+    			if (checkBox.selected) {
+    				(notice.style as Style).color = uint(checkBox.value);
+    			} else {
+    				(notice.style as Style).color = 0;
+    			}
+    			notice.applyStyles();
+    		}
+    		
+    		private function changeSubscription(event:Event):void
+    		{
+    			var radioButton:RadioButton = event.target as RadioButton;
+    			if (radioButton.selected) {
+    				output.text = "You picked: "+String(radioButton.value)+". A wise choice.";
+    			}
+    		}
+    		
+    		private function showChild():void
+    		{
+    			var index:int = bbar.selectedIndex;
+    			stack.selectedIndex = index;
+    		}
+    		
+    		private function datePicked():void
+    		{
+    			var msg:String = "Selected "+
+    				String(datePicker.selectedDate.getMonth()+1)+"/"+
+    				String(datePicker.selectedDate.getDate())+ "/"+
+    				String(datePicker.selectedDate.getFullYear());
+    			output.text = msg;
+    		}
+    		
+    		private function dateFieldPicked():void
+    		{
+    			var msg:String = "Selected "+
+    				String(dateField.selectedDate.getMonth()+1)+"/"+
+    				String(dateField.selectedDate.getDate())+ "/"+
+    				String(dateField.selectedDate.getFullYear());
+    			output.text = msg;
+    		}
+    		
+    		private function handleImageLoad():void
+    		{
+    			var msg:String = "Image is "+img.naturalWidth+" x "+img.naturalHeight;
+    			imageOutput.text = msg;
+    		}
+    		
+    		private function handleNumericStepper():void
+    		{
+    			var msg:String = "Value: "+numStepper.value;
+    			output.text = msg;
+    		}
+    		
+    		private function handleSlider():void
+    		{
+    			var msg:String = "Value: "+slider.value;
+    			output.text = msg;
+    		}
+    		
+    		private function handlePicker():void
+    		{
+    			var msg:String = "Value: "+_states[picker.selectedIndex];
+    			output.text = msg;
+    		}
+    		
+    		private function showAlert():void
+    		{
+    			Alert.showNativeAlert("Hello, Royale Foundation here!");
+    		}
+    		
+    		private function showConfirm():void
+    		{
+    			var ok:Function = function ():void {
+    				trace("is is OK");
+    				output.text = "You agreed!";
+    			}
+    			var cancel:Function = function():void {
+    				trace("was cancelled");
+    				output.text = "Aw, that's a shame!";
+    			}
+    			Alert.showNativeConfirm("Do you agree?", ok, cancel);
+    		}
+    		
+    		private function showPrompt():void
+    		{
+    			var answer:Function = function(result):void {
+    				if (result == null || result == "") 
+    					output.text = "Color: - cancelled";
+    				else
+    					output.text = "Color: "+result;
+    			}
+    			Alert.showNativePrompt("Your favorite color:", "color name", answer);	
+    		}
+    	]]>
+    </fx:Script>
+     
+    <!--
+    	Makes this class have horizontal layout
+    -->
+  	<rf:beads>
+  		<rf:HorizontalLayout />
+  	</rf:beads>
+  	
+  	<!-- Check the style for #outputArea - you'll see that it has position:absolute
+  	     so it is not affected by the HorizontalLayout.
+  	-->
+  	<rf:Container id="outputArea">
+  		<rf:Label id="output" text="Output goes here" />
+  	</rf:Container>
+    	
+    <!--
+    	A pretty standard vertical layout 
+    -->
+	<rf:VBox>
+		<rf:style>
+			<rf:Style textAlign="center" />
+		</rf:style>
+		<rf:Label text="Hello, World!" className="Title" />
+		<rf:Label text="Hello, Foundation!" />
+		<rf:TextInput placeHolder="Your Name Here" />
+		<rf:TextInput placeHolder="Your Password Here">
+			<rf:beads>
+				<rf:PasswordBead />
+			</rf:beads>
+		</rf:TextInput>
+		<rf:TextInput placeHolder="Numeric only">
+			<rf:beads>
+				<rf:NumericOnlyBead />
+			</rf:beads>
+		</rf:TextInput>
+		<rf:TextInput text="I am not enabled" enabled="false" />
+		<rf:HBox className="ImageBox">
+			<rf:Image id="img" src="assets/mini.jpg" width="100" loaded="handleImageLoad()"/>
+			<rf:TextBlock id="imageOutput" />
+		</rf:HBox>
+		<rf:HRule />
+		<rf:Label text="At the Bottom" />
+	</rf:VBox>
+	
+	<!-- 
+		Using a vertical layout, a ButtonBar placed on top of (or it could be below) acts
+		like a selector for the ViewStack
+	-->
+	<rf:VBox className="TabBox">
+		<rf:ToggleButtonBar id="bbar" change="showChild()" selectedIndex="0" />
+		<rf:ViewStack id="stack">
+			<rf:DateChooser id="datePicker" change="datePicked()"/>
+			<rf:Label text="Second Child of the ViewStack: a simple label." />
+			<rf:TextBlock>
+				<rf:text>This is the third child of the ViewStack. It is a block of text that may wrap or it may not, depending on the size of its parent container.</rf:text>
+			</rf:TextBlock>
+		</rf:ViewStack>
+	</rf:VBox>
+		
+	<!-- 
+		This vertical box is a home-grown Panel with a lot of behavior being
+		done using styles. You could replace this with rf:Panel and have a
+		little cleaner app.
+	-->
+	<rf:VBox className="SimplePanel">
+		<rf:style>
+			<rf:Style border="1px solid black" padding="0"/>
+		</rf:style>
+		
+		<rf:TitleBar id="navAreaBar" title="Title Here" width="300">
+			<rf:leftItems>
+				<rf:Button label="Prev" />
+			</rf:leftItems>
+			<rf:rightItems>
+				<rf:Button label="Done" />
+			</rf:rightItems>
+		</rf:TitleBar>
+
+		<rf:HBox id="navAreaBox" width="300">
+			<rf:TextBlock id="notice" className="Plan">
+				<rf:text>Select the type of subscription plan you would like to have. Members get a 10% discount. You can cancel at any time. A 5% surcharge is added for Owl delivery.</rf:text>
+			</rf:TextBlock>
+			<rf:VRule height="100"/>
+			<rf:VBox>
+				<rf:RadioButton label="Email" value="email" change="changeSubscription(event)" />
+				<rf:RadioButton label="Phone" value="phone" selected="true" change="changeSubscription(event)" />
+				<rf:RadioButton label="Owl" value="owl" change="changeSubscription(event)" />
+			</rf:VBox>
+		</rf:HBox>
+	</rf:VBox>
+			
+	<!--
+		More controls here
+	-->
+	<rf:VBox>
+		<rf:Label text="Preferred Colors" className="Title"/>
+		<rf:CheckBox label="Red" value="#FF0000" change="changeColor(event)"/>
+		<rf:CheckBox label="Yellow" value="#FFFF00" change="changeColor(event)" />
+		<rf:CheckBox label="Blue" value="#0000FF" change="changeColor(event)" />
+		<rf:NumericStepper id="numStepper" minimum="0" maximum="10" value="5" change="handleNumericStepper()"/>
+		<rf:Slider id="slider" minimum="0" maximum="10" value="5" change="handleSlider()" liveDragging="true" />
+		<rf:DateField id="dateField" change="dateFieldPicked()" />
+		
+		<!-- dataProvider assigned in setup function -->
+		<rf:SelectList id="picker" selectedIndex="3" change="handlePicker()" />
+	</rf:VBox>
+	
+	<!--
+		Bunches of buttons.
+	-->
+	<rf:VBox>
+		<rf:Button label="Push Me" click="DoSomething()" />
+		<rf:Button label="A Long Button Label" height="50"/>
+		<rf:Button label="Disabled Button" enabled="false" />
+		<rf:Button label="Simplify" click="makeSmaller()" />
+		<rf:Button label="Green Square" className="GreenSquare"/>
+		<rf:Button label="Red Square" className="RedSquare" />
+		<rf:HRule />
+		<rf:Button label="Show Alert" click="showAlert()" />
+		<rf:Button label="Show Confirm" click="showConfirm()" />
+		<rf:Button label="Show Prompt" click="showPrompt()" />
+	</rf:VBox>
+	
+	<!--
+		Finally, if you insist on placing everything using (x,y), then
+		set up the layout for the Container using AbsoluteLayout.
+	-->
+	<rf:Container className="AbsoluteLayout">
+		<rf:Label text="At (0,0)" x="0" y="0" />
+		<rf:Rectangle className="RedGraphic" x="50" y="50" width="100" height="60" />
+		<rf:Ellipse className="RedGraphic" x="70" y="40" width="30" height="100" />
+		<rf:Label text="In the middle?" x="120" y="120" />
+		<rf:Label text="Bottom corner" right="0" bottom="0" />
+		<rf:Polygon className="RedGraphic" x="150" y="155" width="70" height="90" sides="3" />
+	</rf:Container>
+
+</rf:Application>

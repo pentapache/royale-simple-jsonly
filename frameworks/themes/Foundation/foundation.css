@@ -1,0 +1,384 @@
+/*
+ *
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+@namespace "library://ns.apache.org/royale/foundation";
+
+Button
+{
+	font-family: Arial;
+	font-size: 12px;
+	padding: 4px;
+	background-color: lightgray;
+	border: 1px solid gray;
+	border-radius: 2px;
+}
+
+CheckBox
+{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+ControlBar
+{
+	font-family: Arial;
+	font-size: 12px;
+	background-color: #EFEFEF;
+	border: 1px solid black;
+	height: 30px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+DataList
+{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+DataTable
+{
+	font-family: Arial;
+	font-size: 12px;
+	border: 1px solid black;
+	border-collapse: collapse;
+}
+
+DateChooser
+{
+	font-family: Arial;
+	font-size: 12px;
+	border: 1px solid black;
+}
+
+HRule
+{
+	border-style: inset;
+	border-width: 2px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+}
+
+Label
+{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+NumericStepper
+{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+RadioButton
+{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+TextBlock
+{
+	font-family: Arial;
+	font-size: 12px;
+}
+
+TitleBar
+{
+	border: 1px solid gray;
+    background-color: #A7B1D2;
+	text-align: center;
+	height: 30px;
+	line-height: 30px;
+	font-family: Arial;
+	font-size: 14px;
+	font-weight: bold;
+}
+ 
+ToggleButton
+{
+	background-color: lightgray;
+	font-family: Arial;
+	font-size: 12px;
+	text-align: center;
+	border-radius: 2px;
+}
+
+VRule
+{
+	border-style: inset;
+	border-width: 2px;
+	margin-left: 2px;
+	margin-right: 2px;
+}
+
+/* -------------------------------------------------------------------
+ *
+ * Sub-component Styles
+ *
+ *  ------------------------------------------------------------------- */
+ 
+/* ------------------------------------
+ * Button
+ * ------------------------------------ */
+ 
+.Button:hover 
+{
+	background-color: #C8CFFF;
+	border: 1px solid gray;
+}
+
+.Button:active 
+{
+	background-color: #9196B9;
+	color: white;
+}
+
+.Button[disabled]
+{
+	pointer-events: none;
+	opacity: .75;
+}
+ 
+/* ------------------------------------
+ * ButtonBar
+ * ------------------------------------ */
+ 
+ButtonBar > .Button {
+	border-radius: 0px;
+}
+ 
+/* ------------------------------------
+ * DataTable
+ * ------------------------------------ */
+ 
+.DataTableItemRenderer 
+{
+	border: 0.5px solid black;
+}
+
+.DataTableRow:hover 
+{
+	background-color: #C8CFFF;
+}
+
+.DataTableRow:active 
+{
+	background-color: #9196B9;
+	color: white;
+}
+    	
+DataTable .listSelect 
+{
+	background-color: orange;
+}
+ 
+/* ------------------------------------
+ * DataList
+ * ------------------------------------ */
+
+.DataList > .DataItemRenderer:hover 
+{
+	background-color: #C8CFFF;
+}
+
+.DataList > .DataItemRenderer:active 
+{
+	background-color: #9196B9;
+	color: white;
+}
+    	
+DataList .listSelect 
+{
+	background-color: orange;
+}
+ 
+/* ------------------------------------
+ * DateChooser
+ * ------------------------------------ */
+ 
+DateChooser
+{
+	padding: 4px;
+	width: 200px;
+}
+
+DateChooser .headerArea
+{
+	margin-bottom: 6px;
+}
+
+DateChooser .headerArea .Button
+{
+	border: none;
+	background-color: transparent;
+}
+
+DateChooser .headerArea .TextBlock
+{
+	font-weight: bold;
+	font-size: 14px;
+}
+
+DateChooser .weekdayArea
+{
+	padding-bottom: 4px;	
+	border-bottom: 1px inset gray;
+	color: #666666;
+	font-weight: bold;
+}
+
+DateChooser .contentArea
+{
+	margin-top: 6px;
+	height: 100px;
+}
+
+DateChooser .date:hover
+{
+	background-color: #C8CFFF;
+	border-radius: 50%;
+}
+
+DateChooser .date:active
+{
+	background-color: #9196B9;
+	border-radius: 50%;
+	color: white;
+}
+
+DateChooser .date[disabled] {
+	pointer-events: none;
+}
+
+DateChooser .today
+{
+	border-color: transparent;
+	box-shadow: 0 0 0 2px #9196B9;
+	border-radius: 50%;
+}
+
+DateChooser .dateSelect
+{
+	background-color: orange;
+	border-radius: 50%;
+}
+ 
+/* ------------------------------------
+ * DateField
+ * ------------------------------------ */
+ 
+DateField
+{
+	border: 1px solid rgb(221,221,221);
+}
+ 
+DateField .dateField_input
+{
+	border: none;
+}
+
+DateField .dateField_button
+{
+	border: none;
+	background-color: transparent;
+}
+
+DateField .dateField_button:hover
+{
+	background-color: transparent;
+	border: none;
+}
+
+DateField .dateField_button:active
+{
+	background-color: transparent;
+	border: none;
+	color: blue;
+}
+
+.dateField_chooser
+{
+	background-color: white;
+	border: 1px solid black;
+}
+ 
+/* ------------------------------------
+ * Panel
+ * ------------------------------------ */
+
+.panel_contentArea
+{
+	padding: 4px;
+	border-left: 1px solid gray;
+	border-right: 1px solid gray;
+	border-bottom: 1px solid gray;
+}
+    	
+Panel > .ControlBar 
+{
+	border-left: 1px solid gray;
+	border-right: 1px solid gray;
+	border-bottom: 1px solid gray;
+	border-top: none;
+}
+
+Panel .Label 
+{
+	line-height: 30px; /* match height of the Panel */
+}
+ 
+/* ------------------------------------
+ * PopUp
+ * ------------------------------------ */
+
+.PopUp
+{
+	box-shadow: 5px 10px 18px #888888;
+}
+ 
+/* ------------------------------------
+ * ToggleButton
+ * ------------------------------------ */
+ 
+.ToggleButton:hover 
+{
+	background-color: #C8CFFF;
+	border: 1px solid gray;
+}
+
+.ToggleButton:active 
+{
+	background-color: #9196B9;
+	color: white;
+}
+
+.toggleSelected
+{
+	background-color: orange;
+}
+ 
+/* ------------------------------------
+ * ToggleButtonBar
+ * ------------------------------------ */
+ 
+ToggleButtonBar > .ToggleButton {
+	border-radius: 0px;
+}
+ 

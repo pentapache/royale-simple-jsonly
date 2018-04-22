@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+<rf:DataTableItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                   xmlns:rf="library://ns.apache.org/royale/foundation">
+        
+    <!--
+    	This is a custom itemRenderer for a DataTable. This will display
+    	an image and a label.
+    -->           
+    <fx:Script>
+    	<![CDATA[
+    		/*
+    		 * An alternative to using shapes in the itemRenderer is to use
+    		 * images. Uncomment the code related to images to see what happens.
+    		 *
+    		private var green:String = "assets/smallgreenrect.jpg";
+    		private var red:String = "assets/mediumredrect.jpg";
+    		 */
+    		
+    		// use ellipses with different colors to show how an itemRenderer
+    		// can be changed at runtime.
+    		
+    		static private var colors:Array = ["RedRect", "GoldRect", "GreenRect",
+    			"BlueRect"];
+    			    		
+    		/**
+    		 * Override addedToParent to transfer information from the data
+    		 * item (a structure from your data provider) to the UI components.
+    		 */
+    		override public function addedToParent():void
+    		{
+    			super.addedToParent();
+    			
+    			title.text = String(data);
+    			
+    			var useClass:String = colors[index % colors.length];
+    			shape.className = useClass;
+    			
+    			/* 
+    			 * if using an image, this is how you would change the image to view
+    			 *
+    			if (index == 2) {
+    				image.src = red;
+    			} else {
+    				image.src = green;
+    			}
+    			 */
+    		}
+    	
+    	]]>
+    </fx:Script>
+       
+    <!--
+    	You could display an image in the itemRenderer and change it dynamically
+    	in the addedToParent() function.
+    
+    <rf:Image id="image" width="16" height="16" /> 
+     -->
+    
+    <rf:Ellipse id="shape" width="16" height="16" />          
+	<rf:Label id="title" />
+	
+</rf:DataTableItemRenderer>
