@@ -36,6 +36,11 @@ package org.apache.royale.foundation.core
 	 *         <rf:style><rf:Style backgroundColor="orange" /></rf:style>
 	 *         ...
 	 *     </rf:Container>
+	 *
+	 * NOTE: The intention here was to flush out what I wanted this style class to actually do,
+	 * understand how to do it, and then incorporate changes - if any - into a CSS style class
+	 * that already exists in Core. I was not sure if what is there would do what I wanted until
+	 * I understand how it would work and be used.
 	 */
 	public class Style
 	{

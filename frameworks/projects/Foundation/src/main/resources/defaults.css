@@ -246,6 +246,35 @@ HBox
 }
  
 /* ------------------------------------
+ * HDividedBox
+ * ------------------------------------ */
+
+HDividedBox
+{
+	IBeadLayout: ClassReference("org.apache.royale.foundation.containers.layouts.HorizontalLayout");
+}
+
+HDividedBox > *
+{
+	vertical-align: top;
+}
+
+.HDividedBar
+{
+	display: inline-grid;
+	height: 100%;
+	margin-left: 6px;
+	margin-right: 6px;
+	cursor: col-resize;
+	stroke: black;
+	width: 2;
+}
+
+.HDividedBar_gripper {
+	margin: auto 0;
+}
+ 
+/* ------------------------------------
  * HRule
  * ------------------------------------ */
  
@@ -373,6 +402,32 @@ ToggleButtonBar
 VBox 
 {
 	IBeadLayout: ClassReference("org.apache.royale.foundation.containers.layouts.VerticalLayout");
+}
+ 
+/* ------------------------------------
+ * VDividedBox
+ * ------------------------------------ */
+ 
+VDividedBox
+{	
+	IBeadLayout: ClassReference("org.apache.royale.foundation.containers.layouts.VerticalLayout");
+}
+ 
+.VDividedBar
+{
+	display: block;
+	margin-top: 6px;
+	margin-bottom: 6px;
+	cursor: row-resize;
+	stroke: black;
+	width: 2;
+}
+
+.VDividedBar_gripper {
+	width: 10%;
+	height: 10px;
+	margin: 0 auto;
+	display: block;
 }
  
 /* ------------------------------------

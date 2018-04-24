@@ -80,6 +80,15 @@ package org.apache.royale.foundation.svg
 			}
 		}
 
+		//---------------------------------------------
+		// resetPath
+		//---------------------------------------------
+
+		public function resetPath(value:String):void
+		{
+			_path = value;
+		}
+
 		//--------------------------------------------------------------------
 		//
 		// Methods

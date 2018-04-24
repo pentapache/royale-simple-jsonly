@@ -27,7 +27,9 @@
     <component id="Container" class="org.apache.royale.foundation.containers.Container" />
     <component id="FlexBox" class="org.apache.royale.foundation.containers.FlexBox" />
     <component id="HBox" class="org.apache.royale.foundation.containers.HBox" />
+    <component id="HDividedBox" class="org.apache.royale.foundation.containers.HDividedBox" />
     <component id="VBox" class="org.apache.royale.foundation.containers.VBox" />
+    <component id="VDividedBox" class="org.apache.royale.foundation.containers.VDividedBox" />
     <component id="Panel" class="org.apache.royale.foundation.containers.Panel" />
     <component id="ViewStack" class="org.apache.royale.foundation.containers.ViewStack" />
     

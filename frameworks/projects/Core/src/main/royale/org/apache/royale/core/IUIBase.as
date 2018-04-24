@@ -159,6 +159,26 @@ package org.apache.royale.core
 		function get percentHeight():Number;
 		function set percentHeight(value:Number):void;
 
+		/**
+		 * The minimum width of the component.
+		 */
+		function get minWidth():Number;
+
+		/**
+		 * The minimum height of the component.
+		 */
+		function get minHeight():Number;
+
+		/**
+		 * The maximum width of the component.
+		 */
+		function get maxWidth():Number;
+
+		/**
+		 * The maximum height of the component.
+		 */
+		function get maxHeight():Number;
+
         /**
          *  Whether the component is visible.
          *

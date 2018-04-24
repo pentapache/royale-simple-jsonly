@@ -497,6 +497,68 @@ package org.apache.royale.foundation.core
 		}
 
 		//---------------------------------------------
+		// minWidth
+		//---------------------------------------------
+
+		public function get minWidth():Number
+		{
+			COMPILE::JS {
+				var mw:Object = element.style['min-width'];
+				var value:Number = Number(element.style.minWidth);
+				return value;
+			}
+			COMPILE::SWF {
+				return 0;
+			}
+		}
+
+		//---------------------------------------------
+		// minHeight
+		//---------------------------------------------
+
+		public function get minHeight():Number
+		{
+			COMPILE::JS {
+				var value:Number = Number(element.style.minHeight);
+				return value;
+			}
+			COMPILE::SWF {
+				return 0;
+			}
+		}
+
+		//---------------------------------------------
+		// maxWidth
+		//---------------------------------------------
+
+		public function get maxWidth():Number
+		{
+			COMPILE::JS {
+				var mw:Object = element.style['max-width'];
+				var value:Number = Number(element.style.maxWidth);
+				return value;
+			}
+			COMPILE::SWF {
+				return 0;
+			}
+		}
+
+		//---------------------------------------------
+		// maxHeight
+		//---------------------------------------------
+
+		public function get maxHeight():Number
+		{
+			COMPILE::JS {
+				var value:Number = Number(element.style.maxHeight);
+				return value;
+			}
+			COMPILE::SWF {
+				return 0;
+			}
+		}
+
+		//---------------------------------------------
 		// visible
 		//---------------------------------------------
 

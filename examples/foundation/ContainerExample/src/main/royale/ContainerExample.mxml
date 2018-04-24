@@ -75,6 +75,36 @@ limitations under the License.
     		opacity: 0.4;
     	}
     	
+    	/*
+         * DividedBox demo style
+    	 */
+    	 
+    	#appDemo {
+    		border: 1px solid black;
+    		border-radius: 8px;
+    		background-color: aliceblue;
+    		padding: 6px;
+    	}
+    	
+    	#menuArea {
+    		max-width: 130px;
+    	}
+    	
+    	#bannerArea {
+    		min-height: 50px;;
+    	}
+    	
+    	#detailArea {
+    		min-height: 100px;
+    	} 
+    	
+    	#footerArea {
+    		min-height: 80px;
+    		height: 80px;
+    		max-height: 80px;
+    		background-color: lightblue;
+    	}
+    	
     </fx:Style>
     
     <fx:Script>
@@ -174,5 +204,33 @@ limitations under the License.
 		<rf:Rectangle className="OrangeRect" width="150" height="75" />
 		<rf:Rectangle className="GreenRect" width="50" height="100" />
 	</rf:VBox>
+  	
+  	
+  	<!--
+  		Demonstrates the DividedBox classes. These still need a little work
+  		as they can easily resize something strangely.
+  	-->
+  	
+  	<rf:HDividedBox id="appDemo" height="300">
+  		<rf:VBox id="menuArea">
+  			<rf:Button label="Menu 1" className="MenuButton" />
+  			<rf:Button label="Menu 2" className="MenuButton" />
+  			<rf:Button label="Menu 3" className="MenuButton" />
+  			<rf:Button label="Menu 4" className="MenuButton" />
+  		</rf:VBox>
+  		<rf:VDividedBox>
+  			<rf:VBox id="bannerArea">
+  				<rf:Label text="Maybe this is a banner" />
+  				<rf:Label text="DividedBoxes are still a work in progress." />
+  			</rf:VBox>
+  			<rf:Container id="detailArea">
+  				<rf:Label text="Maybe this has details based on the menu pick" />
+  			</rf:Container>
+  			<rf:HBox id="footerArea">
+  				<rf:Label text="Footer for the app." />
+  				<rf:Button label="Another Menu" />
+  			</rf:HBox>
+  		</rf:VDividedBox>
+  	</rf:HDividedBox>
 
 </rf:Application>
