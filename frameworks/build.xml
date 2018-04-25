@@ -114,7 +114,7 @@
         <antcall target="Reflection"/>
         <antcall target="Network"/>
         <antcall target="Storage"/>
-        <antcall target="Foundation"/>
+        <antcall target="Simple"/>
     </target>
     
     <target name="fonts">
@@ -147,7 +147,7 @@
         <ant dir="${basedir}/projects/Reflection" target="clean"/>
         <ant dir="${basedir}/projects/Network" target="clean"/>
         <ant dir="${basedir}/projects/Storage" target="clean"/>
-        <ant dir="${basedir}/projects/Foundation" target="clean"/>
+        <ant dir="${basedir}/projects/Simple" target="clean"/>
 
         <!-- delete the FlashBuilder executable directories -->
         <delete includeemptydirs="true" failonerror="false">
@@ -195,8 +195,8 @@
         <ant dir="${basedir}/projects/Storage"/>
     </target>
 
-    <target name="Foundation" description="Clean build of Foundation.swc">
-        <ant dir="${basedir}/projects/Foundation"/>
+    <target name="Simple" description="Clean build of Simple.swc">
+        <ant dir="${basedir}/projects/Simple"/>
     </target>
 
     <target name="create-config" depends="playerglobal-setswfversion" description="Copy the config template and inject version numbers">

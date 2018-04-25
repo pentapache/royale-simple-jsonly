@@ -149,9 +149,9 @@
       </namespace>
       
       <namespace>
-          <uri>library://ns.apache.org/royale/foundation</uri>
+          <uri>library://ns.apache.org/royale/simple</uri>
 
-          <manifest>projects/Foundation/src/main/resources/foundation-manifest.xml</manifest>
+          <manifest>projects/Simple/src/main/resources/simple-manifest.xml</manifest>
 
       </namespace>
       </namespaces>
@@ -204,7 +204,7 @@
 
       <!-- List of CSS or SWC files to apply as a theme. -->
       <theme>
-          <filename>themes/Foundation/foundation.css</filename>
+          <filename>themes/Simple/simple.css</filename>
       </theme>
 
       <!-- Turns on the display of stack traces for uncaught runtime errors. -->

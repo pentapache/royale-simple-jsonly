@@ -81,7 +81,7 @@
         <antcall target="Network"/>
         <antcall target="Reflection"/>
         <antcall target="Storage"/>
-		<antcall target="Foundation"/>
+		<antcall target="Simple"/>
     </target>
     
     <target name="other.locales" description ="Builds resource SWCs for all locales">
@@ -110,7 +110,7 @@
         <ant dir="${basedir}/projects/NetworkJS" target="clean"/>
         <ant dir="${basedir}/projects/ReflectionJS" target="clean"/>
         <ant dir="${basedir}/projects/StorageJS" target="clean"/>
-        <ant dir="${basedir}/projects/FoundationJS" target="clean"/>
+        <ant dir="${basedir}/projects/SimpleJS" target="clean"/>
 
         <delete dir="${basedir}/libs"/>
         <delete dir="${basedir}/generated-sources"/>
@@ -140,8 +140,8 @@
         <ant dir="${basedir}/projects/StorageJS"/>
     </target>
     
-    <target name="TLF" description="Clean build of FoundationJS.swc">
-        <ant dir="${basedir}/projects/FoundationJS"/>
+    <target name="TLF" description="Clean build of SimpleJS.swc">
+        <ant dir="${basedir}/projects/SimpleJS"/>
     </target>
 
 </project>

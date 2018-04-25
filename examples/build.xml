@@ -74,11 +74,11 @@
     </target>
     
     <target name="compile" description="Compile Examples" >
-        <ant dir="${basedir}/foundation/ContainerExample"/>
-        <ant dir="${basedir}/foundation/ControlsExample"/>
-        <ant dir="${basedir}/foundation/ListExample"/>
-        <ant dir="${basedir}/foundation/ShapesExample"/>
-        <ant dir="${basedir}/foundation/WeatherExample"/>
+        <ant dir="${basedir}/simple/ContainerExample"/>
+        <ant dir="${basedir}/simple/ControlsExample"/>
+        <ant dir="${basedir}/simple/ListExample"/>
+        <ant dir="${basedir}/simple/ShapesExample"/>
+        <ant dir="${basedir}/simple/WeatherExample"/>
     </target>
     
     <!--
@@ -92,19 +92,19 @@
     </target>
     
     <target name="clean" description="Cleans all SWCs and their resource bundles">
-        <ant dir="${basedir}/foundation/ListExample" target="clean"/>
-        <ant dir="${basedir}/foundation/ContainerExample" target="clean"/>
-        <ant dir="${basedir}/foundation/ControlsExample" target="clean"/>
-        <ant dir="${basedir}/foundation/ShapesExample" target="clean"/>
-        <ant dir="${basedir}/foundation/WeatherExample" target="clean"/>
+        <ant dir="${basedir}/simple/ListExample" target="clean"/>
+        <ant dir="${basedir}/simple/ContainerExample" target="clean"/>
+        <ant dir="${basedir}/simple/ControlsExample" target="clean"/>
+        <ant dir="${basedir}/simple/ShapesExample" target="clean"/>
+        <ant dir="${basedir}/simple/WeatherExample" target="clean"/>
     </target>
 
     <target name="examine" description="Cleans all SWCs and their resource bundles">
-        <ant dir="${basedir}/foundation/ListExample" target="examine"/>
-        <ant dir="${basedir}/foundation/ContainerExample" target="examine"/>
-        <ant dir="${basedir}/foundation/ControlsExample" target="examine"/>
-        <ant dir="${basedir}/foundation/ShapesExample" target="examine"/>
-        <ant dir="${basedir}/foundation/WeatherExample" target="examine"/>
+        <ant dir="${basedir}/simple/ListExample" target="examine"/>
+        <ant dir="${basedir}/simple/ContainerExample" target="examine"/>
+        <ant dir="${basedir}/simple/ControlsExample" target="examine"/>
+        <ant dir="${basedir}/simple/ShapesExample" target="examine"/>
+        <ant dir="${basedir}/simple/WeatherExample" target="examine"/>
     </target>
 
 </project>
